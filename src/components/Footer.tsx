@@ -38,11 +38,11 @@ const Footer = () => {
             </p>
             <div className="space-y-2">
               <a 
-                href="tel:+15551234567"
+                href="tel:+250788123456"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Phone className="h-4 w-4 mr-2" />
-                <span className="font-body">+1 (555) 123-4567</span>
+                <span className="font-body">+250 788 123 456</span>
               </a>
               <a 
                 href="mailto:alex@fittransform.com"
