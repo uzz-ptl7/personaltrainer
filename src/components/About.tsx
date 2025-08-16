@@ -13,22 +13,22 @@ const About = () => {
     <section id="about" className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Image */}
-          <div className="relative">
+          {/* Image with Trainer Name Overlay */}
+          <div className="relative group">
             <div className="relative overflow-hidden rounded-2xl shadow-elevation">
               <img
                 src={trainerPhoto}
                 alt="Personal Trainer"
-                className="w-full h-[600px] object-cover"
+                className="w-full h-[600px] object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent"></div>
-            </div>
-            
-            {/* Floating Achievement Badge */}
-            <div className="absolute -bottom-6 -right-6 bg-gradient-card p-6 rounded-2xl shadow-elevation border border-border">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gradient-primary">500+</div>
-                <div className="text-sm text-muted-foreground">Happy Clients</div>
+              
+              {/* Name Overlay on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center">
+                <div className="text-center mb-8">
+                  <h3 className="font-heading font-bold text-3xl text-foreground mb-2">Alex Martinez</h3>
+                  <p className="font-body text-lg text-muted-foreground">Certified Personal Trainer</p>
+                </div>
               </div>
             </div>
           </div>

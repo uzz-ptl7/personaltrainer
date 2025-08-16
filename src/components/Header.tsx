@@ -34,7 +34,7 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <button
                 key={item.label}
@@ -47,7 +47,7 @@ const Header = () => {
           </nav>
 
           {/* CTA Button (Desktop) */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <Button
               onClick={() => scrollToSection("#contact")}
               variant="default"
@@ -60,7 +60,7 @@ const Header = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-muted-foreground hover:text-primary transition-smooth"
+            className="lg:hidden p-2 text-muted-foreground hover:text-primary transition-smooth"
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -68,7 +68,7 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
+          <div className="lg:hidden py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
               {navigationItems.map((item) => (
                 <button

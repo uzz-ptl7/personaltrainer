@@ -54,8 +54,8 @@ const Contact = () => {
     {
       icon: Phone,
       label: "Phone",
-      value: "+1 (555) 123-4567",
-      action: "tel:+15551234567"
+      value: "+250 788 123 456",
+      action: "tel:+250788123456"
     },
     {
       icon: Mail,
@@ -67,12 +67,12 @@ const Contact = () => {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "Quick Response",
-      action: "https://wa.me/15551234567"
+      action: "https://wa.me/250788123456"
     },
     {
       icon: MapPin,
       label: "Location",
-      value: "Los Angeles, CA",
+      value: "Kigali, Rwanda",
       action: null
     }
   ];
@@ -209,6 +209,25 @@ const Contact = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Map */}
+            <div className="bg-gradient-card rounded-xl p-4 border border-border overflow-hidden">
+              <h4 className="font-heading font-semibold text-lg text-foreground mb-4">
+                Find Me in Kigali
+              </h4>
+              <div className="aspect-video rounded-lg overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15949.65624441434!2d30.058611!3d-1.9705786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca4258ed8e797%3A0xf32b36a5411d0bc8!2sKigali%2C%20Rwanda!5e0!3m2!1sen!2sus!4v1672345678901!5m2!1sen!2sus"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Kigali Location"
+                ></iframe>
+              </div>
             </div>
 
             {/* Call to Action Box */}
