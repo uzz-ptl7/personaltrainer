@@ -20,7 +20,7 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="relative z-10 container mx-auto lg:px-8 px-4 mt-[100px] text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-7xl text-foreground mb-6 animate-fade-in-up">
             Transform Your{" "}

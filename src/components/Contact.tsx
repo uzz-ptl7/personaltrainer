@@ -92,7 +92,7 @@ const Contact = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-2 grid-cols-1 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
           <div className="bg-gradient-card rounded-2xl p-8 border border-border shadow-elevation">
             <h3 className="font-heading font-semibold text-2xl text-foreground mb-6">
@@ -210,45 +210,28 @@ const Contact = () => {
                 </div>
               ))}
             </div>
-
-            {/* Map */}
-            <div className="bg-gradient-card rounded-xl p-4 border border-border overflow-hidden">
-              <h4 className="font-heading font-semibold text-lg text-foreground mb-4">
-                Find Me in Kigali
-              </h4>
-              <div className="aspect-video rounded-lg overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15949.65624441434!2d30.058611!3d-1.9705786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca4258ed8e797%3A0xf32b36a5411d0bc8!2sKigali%2C%20Rwanda!5e0!3m2!1sen!2sus!4v1672345678901!5m2!1sen!2sus"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Kigali Location"
-                ></iframe>
-              </div>
-            </div>
-
-            {/* Call to Action Box */}
-            <div className="bg-gradient-primary p-6 rounded-xl text-center">
-              <h4 className="font-heading font-semibold text-xl text-primary-foreground mb-2">
-                Ready to Get Started?
-              </h4>
-              <p className="text-primary-foreground/90 mb-4">
-                Your transformation begins with a single step. Let's take it together.
-              </p>
-              <Button
-                variant="secondary"
-                size="lg"
-                className="bg-background text-foreground hover:bg-background/90 font-semibold"
-                onClick={() => document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                Book Free Consultation
-              </Button>
-            </div>
           </div>
         </div>
+
+          {/* Map */}
+          <div className="bg-gradient-card rounded-xl p-4 mt-3 border border-border overflow-hidden">
+            <h4 className="font-heading font-semibold text-lg text-foreground mb-4">
+              Find Me in Kigali
+            </h4>
+            <div className="rounded-lg h-[500px] overflow-hidden">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15949.65624441434!2d30.058611!3d-1.9705786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca4258ed8e797%3A0xf32b36a5411d0bc8!2sKigali%2C%20Rwanda!5e0!3m2!1sen!2sus!4v1672345678901!5m2!1sen!2sus"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Kigali Location"
+              ></iframe>
+            </div>
+          </div>
+
       </div>
     </section>
   );

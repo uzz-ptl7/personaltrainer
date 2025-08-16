@@ -97,7 +97,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-border mt-12 pt-8 text-center">
+        <div className="flex justify-between items-center lg:flex-row flex-col text-center border-t border-border mt-12 pt-8">
           <p className="font-body text-muted-foreground">
             © {currentYear} TrainerName. All Rights Reserved.
           </p>
