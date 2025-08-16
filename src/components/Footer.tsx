@@ -30,7 +30,7 @@ const Footer = () => {
           {/* Brand & Description */}
           <div>
             <h3 className="font-heading font-bold text-xl text-foreground mb-4">
-              FitTransform
+              TrainerName
             </h3>
             <p className="font-body text-muted-foreground mb-6">
               Transforming lives through personalized fitness coaching. 
@@ -45,11 +45,11 @@ const Footer = () => {
                 <span className="font-body">+250 788 123 456</span>
               </a>
               <a 
-                href="mailto:alex@fittransform.com"
+                href="mailto:alex@trainername.com"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                <span className="font-body">alex@fittransform.com</span>
+                <span className="font-body">alex@trainername.com</span>
               </a>
             </div>
           </div>
@@ -99,7 +99,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="border-t border-border mt-12 pt-8 text-center">
           <p className="font-body text-muted-foreground">
-            © {currentYear} FitTransform. All Rights Reserved.
+            © {currentYear} TrainerName. All Rights Reserved.
           </p>
           <p className="font-accent text-primary mt-2 text-lg">
             Made with ❤️ in Rwanda by{" "}

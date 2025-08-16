@@ -43,7 +43,7 @@ const Header = () => {
           <div className="flex items-center space-x-2">
             <Dumbbell className="h-8 w-8 text-primary" />
             <span className="font-heading font-bold text-xl text-foreground">
-              FitTransform
+              TrainerName
             </span>
           </div>
 

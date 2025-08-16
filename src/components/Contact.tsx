@@ -60,8 +60,8 @@ const Contact = () => {
     {
       icon: Mail,
       label: "Email",
-      value: "alex@fittransform.com",
-      action: "mailto:alex@fittransform.com"
+      value: "alex@trainername.com",
+      action: "mailto:alex@trainername.com"
     },
     {
       icon: MessageCircle,
