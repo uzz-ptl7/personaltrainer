@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
-import { Menu, X, Dumbbell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Menu, X, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import ssfLogo from '@/assets/ssf-logo.jpg';
 
-const Header = () => {
+interface HeaderProps {
+  onAuthRequest?: () => void;
+}
+
+const Header = ({ onAuthRequest }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Prevent scrolling when menu is open
@@ -40,10 +45,10 @@ const Header = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <Dumbbell className="h-8 w-8 text-primary" />
+          <div className="flex items-center space-x-3">
+            <img src={ssfLogo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
             <span className="font-heading font-bold text-xl text-foreground">
-              TrainerName
+              Salim Saleh Fitness
             </span>
           </div>
 
@@ -60,14 +65,21 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* CTA Button (Desktop) */}
-          <div className="hidden lg:block">
-            <Button
-              onClick={() => scrollToSection("#contact")}
-              variant="default"
-              className="bg-gradient-primary text-primary-foreground font-semibold shadow-primary hover:shadow-glow transition-smooth"
+          {/* CTA Buttons (Desktop) */}
+          <div className="hidden lg:flex gap-3">
+            <Button 
+              onClick={() => scrollToSection('#contact')}
+              className="bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth px-6"
             >
               Book a Session
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/auth'}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              <User className="h-4 w-4 mr-2" />
+              Sign In
             </Button>
           </div>
 
@@ -93,13 +105,22 @@ const Header = () => {
                   {item.label}
                 </button>
               ))}
-              <Button
-                onClick={() => scrollToSection("#contact")}
-                variant="default"
-                className="bg-gradient-primary text-primary-foreground font-semibold shadow-primary mt-4"
-              >
-                Book a Session
-              </Button>
+              <div className="space-y-3 mt-4">
+                <Button 
+                  onClick={() => scrollToSection('#contact')}
+                  className="w-full bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth"
+                >
+                  Book a Session
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/auth'}
+                  variant="outline"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+              </div>
             </nav>
           </div>
         )}
