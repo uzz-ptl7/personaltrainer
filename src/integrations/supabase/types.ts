@@ -14,7 +14,239 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string
+          duration_minutes: number
+          id: string
+          meet_id: string | null
+          meet_link: string | null
+          notes: string | null
+          purchase_id: string
+          scheduled_at: string
+          service_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          meet_id?: string | null
+          meet_link?: string | null
+          notes?: string | null
+          purchase_id: string
+          scheduled_at: string
+          service_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          meet_id?: string | null
+          meet_link?: string | null
+          notes?: string | null
+          purchase_id?: string
+          scheduled_at?: string
+          service_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultation_forms: {
+        Row: {
+          additional_notes: string | null
+          age: number | null
+          created_at: string
+          exercise_preferences: string | null
+          fitness_level: string | null
+          gender: string | null
+          goals: string[] | null
+          height: number | null
+          id: string
+          medical_conditions: string | null
+          schedule_preferences: string | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          age?: number | null
+          created_at?: string
+          exercise_preferences?: string | null
+          fitness_level?: string | null
+          gender?: string | null
+          goals?: string[] | null
+          height?: number | null
+          id?: string
+          medical_conditions?: string | null
+          schedule_preferences?: string | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+        }
+        Update: {
+          additional_notes?: string | null
+          age?: number | null
+          created_at?: string
+          exercise_preferences?: string | null
+          fitness_level?: string | null
+          gender?: string | null
+          goals?: string[] | null
+          height?: number | null
+          id?: string
+          medical_conditions?: string | null
+          schedule_preferences?: string | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number
+          id: string
+          payment_method: string
+          payment_status: string
+          purchased_at: string
+          service_id: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          id?: string
+          payment_method: string
+          payment_status?: string
+          purchased_at?: string
+          service_id: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          payment_method?: string
+          payment_status?: string
+          purchased_at?: string
+          service_id?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          duration_weeks: number | null
+          id: string
+          includes_meet: boolean | null
+          includes_nutrition: boolean | null
+          includes_workout: boolean | null
+          is_active: boolean | null
+          price: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          id?: string
+          includes_meet?: boolean | null
+          includes_nutrition?: boolean | null
+          includes_workout?: boolean | null
+          is_active?: boolean | null
+          price: number
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          id?: string
+          includes_meet?: boolean | null
+          includes_nutrition?: boolean | null
+          includes_workout?: boolean | null
+          is_active?: boolean | null
+          price?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
