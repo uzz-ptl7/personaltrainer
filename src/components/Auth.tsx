@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 interface AuthProps {
   onAuthChange: (user: User | null) => void;
@@ -125,7 +125,18 @@ const Auth = ({ onAuthChange }: AuthProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      {/* Back Button */}
+      <Button 
+        onClick={() => window.location.href = '/'}
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4 text-muted-foreground hover:text-primary"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Home
+      </Button>
+
       <Card className="w-full max-w-md bg-gradient-card border-border shadow-elevation">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-gradient-primary">
