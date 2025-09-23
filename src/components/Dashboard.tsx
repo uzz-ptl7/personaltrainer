@@ -166,14 +166,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
   };
   
   const handleContactSupport = () => {
-    const adminEmail = "salim@salimsalehfitness.com";
+    const adminEmail = "salim@ssf.com";
     const subject = "Support Request";
     const body = `Hi Salim,\n\nI need assistance with:\n\n[Please describe your issue or question here]\n\nBest regards,\n${profile?.full_name || user.email}`;
     
@@ -245,58 +242,40 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       </Button>
                     </CardContent>
                   </Card>
-                ) : (
-                  <div className="grid gap-4">
-                    {purchases.map((purchase) => (
-                      <Card key={purchase.id} className="bg-gradient-card border-border">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">{purchase.service.title}</CardTitle>
-                              <CardDescription>{purchase.service.description}</CardDescription>
-                            </div>
-                            <Badge variant="secondary" className="capitalize">
-                              {purchase.service.type}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {purchase.service.includes_workout && (
-                              <Badge variant="outline" className="text-xs">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Workout Plans
-                              </Badge>
-                            )}
-                            {purchase.service.includes_nutrition && (
-                              <Badge variant="outline" className="text-xs">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Nutrition Guide
-                              </Badge>
-                            )}
-                            {purchase.service.includes_meet && (
-                              <Badge variant="outline" className="text-xs">
-                                <Video className="h-3 w-3 mr-1" />
-                                Video Sessions
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm text-muted-foreground">
-                                Purchased: {formatDate(purchase.purchased_at)}
-                              </p>
-                              <p className="font-semibold">{formatCurrency(purchase.amount)}</p>
-                            </div>
-                            <Button size="sm" variant="outline">
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Access Program
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                 ) : (
+                   <div className="space-y-4">
+                     <div className="grid gap-4">
+                       {purchases.map((purchase) => (
+                         <Card key={purchase.id} className="bg-gradient-card border-border">
+                           <CardHeader>
+                             <div className="flex justify-between items-start">
+                               <div>
+                                 <CardTitle className="text-lg">{purchase.service.title}</CardTitle>
+                                 <CardDescription>{purchase.service.description}</CardDescription>
+                               </div>
+                               <Badge variant="secondary" className="capitalize">
+                                 {purchase.service.type}
+                               </Badge>
+                             </div>
+                           </CardHeader>
+                           <CardContent>
+...
+                           </CardContent>
+                         </Card>
+                       ))}
+                     </div>
+                     {/* Browse More Services Button */}
+                     <div className="text-center pt-4 border-t border-border">
+                       <Button 
+                         onClick={() => setShowServicesStore(true)}
+                         variant="outline"
+                         className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                       >
+                         <ShoppingBag className="h-4 w-4 mr-2" />
+                         Browse More Services
+                       </Button>
+                     </div>
+                   </div>
                 )}
               </div>
             </div>

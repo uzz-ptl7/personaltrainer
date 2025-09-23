@@ -42,18 +42,18 @@ const Footer = () => {
             </p>
             <div className="space-y-2">
               <a 
-                href="tel:+971501234567"
+                href="tel:+250789654321"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Phone className="h-4 w-4 mr-2" />
-                <span className="font-body">+971 50 123 4567</span>
+                <span className="font-body">+250 789 654 321</span>
               </a>
               <a 
-                href="mailto:salim@salimsalehfitness.com"
+                href="mailto:salim@ssf.com"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                <span className="font-body">salim@salimsalehfitness.com</span>
+                <span className="font-body">salim@ssf.com</span>
               </a>
             </div>
           </div>

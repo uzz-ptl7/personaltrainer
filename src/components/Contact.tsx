@@ -54,20 +54,20 @@ const Contact = () => {
     {
       icon: Phone,
       label: "Phone",
-      value: "+971 50 123 4567",
-      action: "tel:+971501234567"
+      value: "+250 789 654 321",
+      action: "tel:+250789654321"
     },
     {
       icon: Mail,
       label: "Email",
-      value: "salim@salimsalehfitness.com",
-      action: "mailto:salim@salimsalehfitness.com"
+      value: "salim@ssf.com",
+      action: "mailto:salim@ssf.com"
     },
     {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "Quick Response",
-      action: "https://wa.me/971501234567"
+      action: "https://wa.me/250789654321"
     },
     {
       icon: MapPin,

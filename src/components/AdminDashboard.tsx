@@ -142,6 +142,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     includes_workout: false,
     includes_meet: false
   });
+  
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editServiceData, setEditServiceData] = useState<any>({});
 
   useEffect(() => {
     loadData();
@@ -406,6 +409,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
+  const editService = (service: Service) => {
+    setEditingService(service);
+    setEditServiceData(service);
+  };
+
+  const updateService = async () => {
+    if (!editingService) return;
+    
+    try {
+      const { error } = await supabase
+        .from('services')
+        .update(editServiceData)
+        .eq('id', editingService.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Service updated successfully",
+      });
+
+      setEditingService(null);
+      setEditServiceData({});
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update service",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteService = async (serviceId: string) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('services')
+        .update({ is_active: false })
+        .eq('id', serviceId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Service deactivated successfully",
+      });
+
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to deactivate service",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleServiceStatus = async (serviceId: string, isActive: boolean) => {
     try {
       const { error } = await supabase
@@ -541,10 +603,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -982,7 +1041,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <Label>Price ($)</Label>
+                    <Label>Price (RWF)</Label>
                     <Input
                       type="number"
                       value={newService.price}
@@ -1075,6 +1134,255 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="testimonials" className="space-y-6">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Video Testimonials Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Pending Approval */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Pending Approval ({pendingTestimonials.length})</h4>
+                    {pendingTestimonials.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">No testimonials pending approval</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {pendingTestimonials.map((testimonial) => (
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium">{testimonial.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => approveTestimonial(testimonial.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => rejectTestimonial(testimonial.id)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Service Edit Modal */}
+                  {editingService && (
+                    <Dialog open={true} onOpenChange={() => setEditingService(null)}>
+                      <DialogContent className="sm:max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Edit Service</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <Label>Title</Label>
+                              <Input
+                                value={editServiceData.title || ''}
+                                onChange={(e) => setEditServiceData({...editServiceData, title: e.target.value})}
+                              />
+                            </div>
+                            <div>
+                              <Label>Type</Label>
+                              <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({...editServiceData, type: value})}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="session">Session</SelectItem>
+                                  <SelectItem value="program">Program</SelectItem>
+                                  <SelectItem value="consultation">Consultation</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Description</Label>
+                            <Textarea
+                              value={editServiceData.description || ''}
+                              onChange={(e) => setEditServiceData({...editServiceData, description: e.target.value})}
+                            />
+                          </div>
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div>
+                              <Label>Price (RWF)</Label>
+                              <Input
+                                type="number"
+                                value={editServiceData.price || 0}
+                                onChange={(e) => setEditServiceData({...editServiceData, price: Number(e.target.value)})}
+                              />
+                            </div>
+                            <div>
+                              <Label>Duration (weeks)</Label>
+                              <Input
+                                type="number"
+                                value={editServiceData.duration_weeks || 0}
+                                onChange={(e) => setEditServiceData({...editServiceData, duration_weeks: Number(e.target.value)})}
+                              />
+                            </div>
+                            <div>
+                              <Label>Duration (minutes)</Label>
+                              <Input
+                                type="number"
+                                value={editServiceData.duration_minutes || 0}
+                                onChange={(e) => setEditServiceData({...editServiceData, duration_minutes: Number(e.target.value)})}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={editServiceData.includes_nutrition || false}
+                                onChange={(e) => setEditServiceData({...editServiceData, includes_nutrition: e.target.checked})}
+                              />
+                              Includes Nutrition
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={editServiceData.includes_workout || false}
+                                onChange={(e) => setEditServiceData({...editServiceData, includes_workout: e.target.checked})}
+                              />
+                              Includes Workout
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={editServiceData.includes_meet || false}
+                                onChange={(e) => setEditServiceData({...editServiceData, includes_meet: e.target.checked})}
+                              />
+                              Includes Video Call
+                            </label>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={updateService} className="flex-1">
+                              Update Service
+                            </Button>
+                            <Button variant="outline" onClick={() => setEditingService(null)} className="flex-1">
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+                    <DialogTitle>Edit Service</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          value={editServiceData.title || ''}
+                          onChange={(e) => setEditServiceData({...editServiceData, title: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({...editServiceData, type: value})}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="session">Session</SelectItem>
+                            <SelectItem value="program">Program</SelectItem>
+                            <SelectItem value="consultation">Consultation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={editServiceData.description || ''}
+                        onChange={(e) => setEditServiceData({...editServiceData, description: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Price (RWF)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.price || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, price: Number(e.target.value)})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Duration (weeks)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.duration_weeks || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, duration_weeks: Number(e.target.value)})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Duration (minutes)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.duration_minutes || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, duration_minutes: Number(e.target.value)})}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_nutrition || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_nutrition: e.target.checked})}
+                        />
+                        Includes Nutrition
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_workout || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_workout: e.target.checked})}
+                        />
+                        Includes Workout
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_meet || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_meet: e.target.checked})}
+                        />
+                        Includes Video Call
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={updateService} className="flex-1">
+                        Update Service
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingService(null)} className="flex-1">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="testimonials" className="space-y-6">

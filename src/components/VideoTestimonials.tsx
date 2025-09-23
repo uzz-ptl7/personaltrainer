@@ -27,7 +27,7 @@ const VideoTestimonials = () => {
   const [uploadData, setUploadData] = useState({
     title: '',
     description: '',
-    video_url: ''
+    video_file: null as File | null
   });
 
   useEffect(() => {
@@ -84,10 +84,10 @@ const VideoTestimonials = () => {
       return;
     }
 
-    if (!uploadData.title || !uploadData.video_url) {
+    if (!uploadData.title || !uploadData.video_file) {
       toast({
         title: "Missing Information",
-        description: "Please provide both title and video URL.",
+        description: "Please provide both title and video file.",
         variant: "destructive"
       });
       return;
@@ -95,43 +95,65 @@ const VideoTestimonials = () => {
 
     setIsUploading(true);
 
-    const { error } = await supabase
-      .from('video_testimonials')
-      .insert([{
-        user_id: user.id,
-        title: uploadData.title,
-        description: uploadData.description,
-        video_url: uploadData.video_url,
-        is_approved: false,
-        is_featured: false
-      }]);
+    try {
+      // Upload video file to storage
+      const fileExt = uploadData.video_file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('video-testimonials')
+        .upload(fileName, uploadData.video_file);
 
-    if (error) {
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('video-testimonials')
+        .getPublicUrl(fileName);
+
+      // Insert testimonial record
+      const { error } = await supabase
+        .from('video_testimonials')
+        .insert([{
+          user_id: user.id,
+          title: uploadData.title,
+          description: uploadData.description,
+          video_url: publicUrl,
+          is_approved: false,
+          is_featured: false
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Testimonial Uploaded!",
+        description: "Your video testimonial has been submitted for review. It will be visible after admin approval.",
+      });
+      setUploadData({ title: '', description: '', video_file: null });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload Failed",
         description: "There was an error uploading your testimonial. Please try again.",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Testimonial Uploaded!",
-        description: "Your video testimonial has been submitted for review. It will be visible after admin approval.",
-      });
-      setUploadData({ title: '', description: '', video_url: '' });
-      setIsDialogOpen(false);
     }
 
     setIsUploading(false);
   };
 
-  const extractVideoId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
-    return match ? match[1] : null;
-  };
-
-  const getEmbedUrl = (url: string) => {
-    const videoId = extractVideoId(url);
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      setUploadData({...uploadData, video_file: file});
+    } else {
+      toast({
+        title: "Invalid File",
+        description: "Please select a valid video file (MP4, MOV, etc.)",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -180,13 +202,14 @@ const VideoTestimonials = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    YouTube Video URL *
+                    Video File *
                   </label>
                   <Input
-                    value={uploadData.video_url}
-                    onChange={(e) => setUploadData({...uploadData, video_url: e.target.value})}
-                    placeholder="https://www.youtube.com/watch?v=..."
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileChange}
                     required
+                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
                   />
                 </div>
                 <div>
@@ -232,12 +255,11 @@ const VideoTestimonials = () => {
                     <Card className="bg-gradient-card border-border shadow-elevation h-full">
                       <CardContent className="p-6">
                         <div className="aspect-video rounded-lg overflow-hidden mb-4">
-                          <iframe
-                            src={getEmbedUrl(testimonial.video_url)}
+                          <video
+                            src={testimonial.video_url}
                             title={testimonial.title}
-                            frameBorder="0"
-                            allowFullScreen
-                            className="w-full h-full"
+                            controls
+                            className="w-full h-full object-cover"
                           />
                         </div>
                         <h3 className="font-heading font-semibold text-lg text-foreground mb-2">
