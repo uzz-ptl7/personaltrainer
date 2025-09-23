@@ -50,20 +50,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Successfully saved to database:', { name, email, timestamp });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google Sheets API error:', errorText);
-      throw new Error(`Google Sheets API error: ${response.status} ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log('Successfully saved to Google Sheets:', result);
-
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Email saved successfully',
-        sheetsResponse: result 
+        message: 'Email subscription saved successfully'
       }),
       {
         status: 200,
