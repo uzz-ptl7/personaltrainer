@@ -6,6 +6,7 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Services from "@/components/Services";
 import VideoTestimonials from "@/components/VideoTestimonials";
+import EmailMarketing from "@/components/EmailMarketing";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
@@ -17,20 +18,15 @@ const Index = ({ onAuthRequest }: IndexProps) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in and redirect to dashboard
+    // Check current user session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        window.location.href = '/dashboard';
-      }
+      setUser(session?.user ?? null);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user ?? null);
-        if (session?.user) {
-          window.location.href = '/dashboard';
-        }
       }
     );
 
@@ -45,6 +41,7 @@ const Index = ({ onAuthRequest }: IndexProps) => {
         <About />
         <Services />
         <VideoTestimonials />
+        <EmailMarketing />
         <Contact />
       </main>
       <Footer />
