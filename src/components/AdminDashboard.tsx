@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,12 +25,13 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  DollarSign
+  DollarSign,
+  LogOut
 } from "lucide-react";
 import logo from "@/assets/ssf-logo.jpg";
 
 interface AdminDashboardProps {
-  user: User;
+  user: any;
   onSignOut: () => void;
 }
 
@@ -59,7 +59,7 @@ interface Purchase {
     title: string;
     type: string;
   };
-  profiles: Profile;
+  profiles?: Profile;
 }
 
 interface Booking {
@@ -70,7 +70,7 @@ interface Booking {
   status: string;
   notes: string;
   meet_link: string;
-  profiles: Profile;
+  profiles?: Profile;
   service: {
     title: string;
     type: string;

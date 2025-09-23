@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag } from "lucide-react";
+import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle } from "lucide-react";
 import ServicesStore from "./ServicesStore";
+import AdminDashboard from "./AdminDashboard";
+import logo from "@/assets/ssf-logo.jpg";
 
 interface DashboardProps {
-  user: User;
+  user: any;
   onSignOut: () => void;
 }
 
@@ -385,7 +386,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               <Card className="bg-gradient-card border-border shadow-elevation">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gradient-primary">
-                    <User className="h-5 w-5" />
+                    <UserIcon className="h-5 w-5" />
                     Profile Information
                   </CardTitle>
                 </CardHeader>
