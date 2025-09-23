@@ -43,39 +43,47 @@ interface Booking {
   notes: string | null;
 }
 
-const Dashboard = ({ user, onSignOut }: DashboardProps) => {
+const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
+  const { toast } = useToast();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showStore, setShowStore] = useState(false);
-  const { toast } = useToast();
+  const [showServicesStore, setShowServicesStore] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     loadUserData();
   }, [user]);
 
   const loadUserData = async () => {
-    setLoading(true);
-
     try {
-      // Load purchases
+      // Load user profile to check admin status
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      setProfile(profileData);
+      setIsAdmin(profileData?.is_admin || false);
+      
+      // Update user's online status
+      await supabase
+        .from('profiles')
+        .update({ 
+          is_online: true, 
+          last_seen: new Date().toISOString() 
+        })
+        .eq('user_id', user.id);
+
       const { data: purchasesData, error: purchasesError } = await supabase
         .from('purchases')
         .select(`
           *,
-          service:services (
-            id,
-            title,
-            description,
-            type,
-            includes_meet,
-            includes_nutrition,
-            includes_workout
-          )
+          service:services (*)
         `)
-        .eq('user_id', user.id)
-        .eq('payment_status', 'completed')
-        .order('purchased_at', { ascending: false });
+        .eq('user_id', user.id);
 
       if (purchasesError) throw purchasesError;
 
@@ -110,13 +118,18 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   };
 
   const handleSignOut = async () => {
+    // Update user's offline status
+    await supabase
+      .from('profiles')
+      .update({ 
+        is_online: false, 
+        last_seen: new Date().toISOString() 
+      })
+      .eq('user_id', user.id);
+      
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to sign out.",
-      });
+      console.error('Error signing out:', error);
     } else {
       onSignOut();
     }
@@ -148,24 +161,30 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return new Date(dateString).toLocaleString();
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('rw-RW', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'RWF'
+      currency: 'USD'
     }).format(amount);
   };
+  
+  const handleContactSupport = () => {
+    const adminEmail = "salim@salimsalehfitness.com";
+    const subject = "Support Request";
+    const body = `Hi Salim,\n\nI need assistance with:\n\n[Please describe your issue or question here]\n\nBest regards,\n${profile?.full_name || user.email}`;
+    
+    window.open(`mailto:${adminEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
 
-  if (showStore) {
-    return <ServicesStore user={user} onBack={() => setShowStore(false)} />;
+  if (isAdmin) {
+    return <AdminDashboard user={user} onSignOut={handleSignOut} />;
+  }
+  
+  if (showServicesStore) {
+    return <ServicesStore user={user} onBack={() => setShowServicesStore(false)} />;
   }
 
   if (loading) {
@@ -181,28 +200,21 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gradient-primary">SSF Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {user.user_metadata?.full_name || user.email}</p>
+      <header className="border-b border-border bg-card">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
+            <div>
+              <h1 className="text-2xl font-bold text-gradient-primary">Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || user.email}</p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setShowStore(true)}
-              className="bg-gradient-primary hover:shadow-primary"
-            >
-              <ShoppingBag className="h-4 w-4 mr-2" />
-              Browse Services
-            </Button>
-            <Button onClick={handleSignOut} variant="outline" size="sm">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
+          <Button onClick={handleSignOut} variant="outline" size="sm">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
-      </div>
+      </header>
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="services" className="w-full">
@@ -224,7 +236,7 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                         Browse our programs and start your fitness journey today!
                       </p>
                       <Button 
-                        onClick={() => setShowStore(true)}
+                        onClick={() => setShowServicesStore(true)}
                         className="mt-4 bg-gradient-primary hover:shadow-primary"
                       >
                         <ShoppingBag className="h-4 w-4 mr-2" />
@@ -276,7 +288,7 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
                               <p className="font-semibold">{formatCurrency(purchase.amount)}</p>
                             </div>
                             <Button size="sm" variant="outline">
-                              <Download className="h-4 w-4 mr-2" />
+                              <ExternalLink className="h-4 w-4 mr-2" />
                               Access Program
                             </Button>
                           </div>
@@ -369,32 +381,72 @@ const Dashboard = ({ user, onSignOut }: DashboardProps) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="profile" className="mt-8">
-            <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserIcon className="h-5 w-5" />
-                  Profile Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+            <TabsContent value="profile" className="space-y-6">
+              <Card className="bg-gradient-card border-border shadow-elevation">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gradient-primary">
+                    <User className="h-5 w-5" />
+                    Profile Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                    <p className="mt-1">{user.user_metadata?.full_name || 'Not provided'}</p>
+                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="font-medium text-foreground">{profile?.full_name || 'Not provided'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
-                    <p className="mt-1">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium text-foreground">{user.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Member Since</label>
-                    <p className="mt-1">{formatDate(user.created_at)}</p>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium text-foreground">
+                      {profile?.phone_country_code} {profile?.phone || 'Not provided'}
+                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Country</p>
+                    <p className="font-medium text-foreground">{profile?.country || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Member since</p>
+                    <p className="font-medium text-foreground">
+                      {formatDate(user.created_at)}
+                    </p>
+                  </div>
+                  <div className="pt-4 space-y-2">
+                    <Button 
+                      onClick={handleContactSupport}
+                      variant="outline" 
+                      className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Contact Support
+                    </Button>
+                    {profile?.phone && (
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => window.open(`tel:${profile.phone_country_code}${profile.phone}`)}
+                          variant="outline" 
+                          className="flex-1"
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call
+                        </Button>
+                        <Button 
+                          onClick={() => window.open(`https://wa.me/${profile.phone_country_code.replace('+', '')}${profile.phone}`)}
+                          variant="outline" 
+                          className="flex-1"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          WhatsApp
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
         </Tabs>
       </div>
     </div>

@@ -8,21 +8,94 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AuthProps {
   onAuthChange: (user: User | null) => void;
 }
 
 const Auth = ({ onAuthChange }: AuthProps) => {
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
+  const [country, setCountry] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    confirmPassword: ""
-  });
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  
+  const countries = [
+    { code: 'US', name: 'United States', flag: '🇺🇸' },
+    { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+    { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+    { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+    { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+    { code: 'FR', name: 'France', flag: '🇫🇷' },
+    { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+    { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+    { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+    { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
+    { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+    { code: 'AT', name: 'Austria', flag: '🇦🇹' },
+    { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+    { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+    { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
+    { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+    { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+    { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+    { code: 'CN', name: 'China', flag: '🇨🇳' },
+    { code: 'IN', name: 'India', flag: '🇮🇳' },
+    { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+    { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+    { code: 'AR', name: 'Argentina', flag: '🇦🇷' },
+    { code: 'CL', name: 'Chile', flag: '🇨🇱' },
+    { code: 'CO', name: 'Colombia', flag: '🇨🇴' },
+    { code: 'PE', name: 'Peru', flag: '🇵🇪' },
+    { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+    { code: 'EG', name: 'Egypt', flag: '🇪🇬' },
+    { code: 'NG', name: 'Nigeria', flag: '🇳🇬' },
+    { code: 'KE', name: 'Kenya', flag: '🇰🇪' },
+    { code: 'GH', name: 'Ghana', flag: '🇬🇭' },
+    { code: 'UG', name: 'Uganda', flag: '🇺🇬' },
+    { code: 'TZ', name: 'Tanzania', flag: '🇹🇿' },
+    { code: 'RW', name: 'Rwanda', flag: '🇷🇼' },
+  ];
+  
+  const countryCodes = [
+    { code: '+1', country: 'US/CA' },
+    { code: '+44', country: 'UK' },
+    { code: '+49', country: 'DE' },
+    { code: '+33', country: 'FR' },
+    { code: '+39', country: 'IT' },
+    { code: '+34', country: 'ES' },
+    { code: '+31', country: 'NL' },
+    { code: '+32', country: 'BE' },
+    { code: '+41', country: 'CH' },
+    { code: '+43', country: 'AT' },
+    { code: '+46', country: 'SE' },
+    { code: '+47', country: 'NO' },
+    { code: '+45', country: 'DK' },
+    { code: '+358', country: 'FI' },
+    { code: '+81', country: 'JP' },
+    { code: '+82', country: 'KR' },
+    { code: '+86', country: 'CN' },
+    { code: '+91', country: 'IN' },
+    { code: '+55', country: 'BR' },
+    { code: '+52', country: 'MX' },
+    { code: '+54', country: 'AR' },
+    { code: '+56', country: 'CL' },
+    { code: '+57', country: 'CO' },
+    { code: '+51', country: 'PE' },
+    { code: '+27', country: 'ZA' },
+    { code: '+20', country: 'EG' },
+    { code: '+234', country: 'NG' },
+    { code: '+254', country: 'KE' },
+    { code: '+233', country: 'GH' },
+    { code: '+256', country: 'UG' },
+    { code: '+255', country: 'TZ' },
+    { code: '+250', country: 'RW' },
+  ];
 
   useEffect(() => {
     // Check for existing session
@@ -46,8 +119,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
       });
 
       if (error) {
@@ -76,11 +149,11 @@ const Auth = ({ onAuthChange }: AuthProps) => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
+    if (!email || !password || !fullName || !phone || !country) {
       toast({
+        title: "Validation Error",
+        description: "Please fill in all fields",
         variant: "destructive",
-        title: "Password Mismatch",
-        description: "Passwords do not match.",
       });
       return;
     }
@@ -90,13 +163,16 @@ const Auth = ({ onAuthChange }: AuthProps) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: formData.fullName,
+            full_name: fullName,
+            phone: phone,
+            phone_country_code: phoneCountryCode,
+            country: country,
           }
         }
       });
@@ -131,7 +207,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
         onClick={() => window.location.href = '/'}
         variant="ghost"
         size="sm"
-        className="absolute top-4 left-4 text-muted-foreground hover:text-primary"
+        className="absolute top-4 left-4 text-foreground hover:text-primary hover:bg-accent"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Home
@@ -161,8 +237,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -173,8 +249,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                     <Button
@@ -206,10 +282,55 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                   <Input
                     id="fullName"
                     type="text"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="Full Name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
                     required
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="country" className="text-foreground">Country</Label>
+                  <Select value={country} onValueChange={setCountry} required>
+                    <SelectTrigger className="bg-input border-border text-foreground">
+                      <SelectValue placeholder="Select your country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.flag} {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
+                  <div className="flex gap-2">
+                    <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
+                      <SelectTrigger className="w-24 bg-input border-border text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countryCodes.map((cc) => (
+                          <SelectItem key={cc.code} value={cc.code}>
+                            {cc.code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Phone number"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="flex-1 bg-input border-border text-foreground placeholder:text-muted-foreground"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -217,8 +338,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                   <Input
                     id="signupEmail"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -229,8 +350,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                     <Input
                       id="signupPassword"
                       type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
                     />
@@ -244,18 +365,6 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    required
-                    minLength={6}
-                  />
                 </div>
                 
                 <Button
