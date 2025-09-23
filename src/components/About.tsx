@@ -26,7 +26,7 @@ const About = () => {
               {/* Name Overlay on Hover */}
               <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/75 to-background opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center">
                 <div className="text-center mb-8">
-                  <h3 className="font-heading font-bold text-3xl text-foreground mb-2">Alex Martinez</h3>
+                  <h3 className="font-heading font-bold text-3xl text-foreground mb-2">Salim Saleh</h3>
                   <p className="font-body text-lg text-muted-foreground">Certified Personal Trainer</p>
                 </div>
               </div>
@@ -43,7 +43,7 @@ const About = () => {
               
               <div className="space-y-4 font-body text-lg text-muted-foreground">
                 <p>
-                  Hi, I'm Alex Martinez, a certified personal trainer with over 8 years 
+                  Hi, I'm Salim Saleh, a certified personal trainer with over 8 years 
                   of experience helping people transform their lives through fitness. 
                   My passion for health and wellness started during my own fitness journey, 
                   and now I'm dedicated to helping others achieve their goals.

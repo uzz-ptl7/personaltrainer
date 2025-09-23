@@ -26,7 +26,9 @@ import {
   AlertCircle,
   Clock,
   DollarSign,
-  LogOut
+  LogOut,
+  Video,
+  X
 } from "lucide-react";
 import logo from "@/assets/ssf-logo.jpg";
 
@@ -101,6 +103,18 @@ interface Notification {
   created_at: string;
 }
 
+interface VideoTestimonial {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  video_url: string;
+  is_approved: boolean;
+  is_featured: boolean;
+  created_at: string;
+  profiles?: Profile;
+}
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [clients, setClients] = useState<Profile[]>([]);
@@ -108,6 +122,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [videoTestimonials, setVideoTestimonials] = useState<VideoTestimonial[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
   const [newBooking, setNewBooking] = useState({
@@ -166,11 +181,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      // Load video testimonials with profiles
+      const { data: testimonialsData } = await supabase
+        .from('video_testimonials')
+        .select('*, profiles(full_name, email)')
+        .order('created_at', { ascending: false });
+
       setClients(clientsData || []);
       setPurchases(purchasesData || []);
       setBookings(bookingsData || []);
       setServices(servicesData || []);
       setNotifications(notificationsData || []);
+      setVideoTestimonials(testimonialsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -211,11 +233,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       )
       .subscribe();
 
+    const testimonialsChannel = supabase
+      .channel('admin-video-testimonials')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'video_testimonials' },
+        () => loadData()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(purchasesChannel);
       supabase.removeChannel(bookingsChannel);
       supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(testimonialsChannel);
     };
   };
 
@@ -759,7 +790,95 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="revenue" className="space-y-6">
+          <TabsContent value="testimonials" className="space-y-6">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Video Testimonials Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Pending Approval */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Pending Approval ({pendingTestimonials.length})</h4>
+                    {pendingTestimonials.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">No testimonials pending approval</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {pendingTestimonials.map((testimonial) => (
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium">{testimonial.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => approveTestimonial(testimonial.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => rejectTestimonial(testimonial.id)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Approved Testimonials */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Approved ({approvedTestimonials.length})</h4>
+                    {approvedTestimonials.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">No approved testimonials</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {approvedTestimonials.map((testimonial) => (
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                            <div className="flex-1">
+                              <div className="font-medium">{testimonial.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                by {testimonial.profiles?.full_name || 'Anonymous'} • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => toggleFeature(testimonial.id, !testimonial.is_featured)}
+                              >
+                                {testimonial.is_featured ? 'Unfeature' : 'Feature'}
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => deleteTestimonial(testimonial.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="bg-gradient-card border-border">
                 <CardHeader>
@@ -832,6 +951,96 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         </div>
                       </div>
                     ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="testimonials" className="space-y-6">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Video Testimonials Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Pending Approval */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Pending Approval ({pendingTestimonials.length})</h4>
+                    {pendingTestimonials.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">No testimonials pending approval</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {pendingTestimonials.map((testimonial) => (
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex-1">
+                              <div className="font-medium">{testimonial.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => approveTestimonial(testimonial.id)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => rejectTestimonial(testimonial.id)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Approved Testimonials */}
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Approved ({approvedTestimonials.length})</h4>
+                    {approvedTestimonials.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">No approved testimonials</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {approvedTestimonials.map((testimonial) => (
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                            <div className="flex-1">
+                              <div className="font-medium">{testimonial.title}</div>
+                              <div className="text-sm text-muted-foreground">
+                                by {testimonial.profiles?.full_name || 'Anonymous'} • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => toggleFeature(testimonial.id, !testimonial.is_featured)}
+                              >
+                                {testimonial.is_featured ? 'Unfeature' : 'Feature'}
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => deleteTestimonial(testimonial.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

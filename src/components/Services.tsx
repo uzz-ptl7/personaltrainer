@@ -129,7 +129,7 @@ const Services = () => {
 
               {/* CTA Button */}
               <Button
-                onClick={scrollToContact}
+                onClick={() => window.location.href = '/auth'}
                 variant={service.popular ? "default" : "outline"}
                 className={`w-full font-semibold transition-smooth ${
                   service.popular 

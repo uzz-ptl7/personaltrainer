@@ -36,13 +36,13 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up">
-            <Button
-              onClick={scrollToContact}
-              size="lg"
-              className="bg-gradient-primary text-primary-foreground font-semibold px-8 py-6 text-lg shadow-primary hover:shadow-glow transition-bounce animate-glow"
-            >
-              Start Training Today
-            </Button>
+              <Button
+                onClick={scrollToContact}
+                size="lg"
+                className="bg-gradient-primary text-primary-foreground font-semibold px-8 py-6 text-lg shadow-primary hover:shadow-glow transition-bounce animate-glow"
+              >
+                Contact Me
+              </Button>
             
             <Button
               onClick={() => document.querySelector("#about")?.scrollIntoView({ behavior: "smooth" })}

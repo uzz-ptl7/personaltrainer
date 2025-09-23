@@ -1,4 +1,5 @@
 import { Instagram, Youtube, Facebook, Mail, Phone } from "lucide-react";
+import ssfLogo from "@/assets/ssf-logo.jpg";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -29,27 +30,30 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Brand & Description */}
           <div>
-            <h3 className="font-heading font-bold text-xl text-foreground mb-4">
-              TrainerName
-            </h3>
+            <div className="flex items-center space-x-3 mb-4">
+              <img src={ssfLogo} alt="SSF Logo" className="h-8 w-8 rounded-full object-cover" />
+              <h3 className="font-heading font-bold text-xl text-foreground">
+                Salim Saleh Fitness
+              </h3>
+            </div>
             <p className="font-body text-muted-foreground mb-6">
               Transforming lives through personalized fitness coaching. 
               Your journey to a stronger, healthier you starts here.
             </p>
             <div className="space-y-2">
               <a 
-                href="tel:+250788123456"
+                href="tel:+971501234567"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Phone className="h-4 w-4 mr-2" />
-                <span className="font-body">+250 788 123 456</span>
+                <span className="font-body">+971 50 123 4567</span>
               </a>
               <a 
-                href="mailto:alex@trainername.com"
+                href="mailto:salim@salimsalehfitness.com"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                <span className="font-body">alex@trainername.com</span>
+                <span className="font-body">salim@salimsalehfitness.com</span>
               </a>
             </div>
           </div>
@@ -99,7 +103,7 @@ const Footer = () => {
         {/* Bottom Section */}
         <div className="flex justify-between items-center lg:flex-row flex-col text-center border-t border-border mt-12 pt-8">
           <p className="font-body text-muted-foreground">
-            © {currentYear} TrainerName. All Rights Reserved.
+            © {currentYear} Salim Saleh Fitness. All Rights Reserved.
           </p>
           <p className="font-accent text-primary mt-2 text-lg">
             Made with ❤️ in Rwanda by{" "}

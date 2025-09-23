@@ -71,7 +71,7 @@ const Header = ({ onAuthRequest }: HeaderProps) => {
               onClick={() => scrollToSection('#contact')}
               className="bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth px-6"
             >
-              Book a Session
+              Contact Me
             </Button>
             <Button 
               onClick={() => window.location.href = '/auth'}
@@ -110,7 +110,7 @@ const Header = ({ onAuthRequest }: HeaderProps) => {
                   onClick={() => scrollToSection('#contact')}
                   className="w-full bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth"
                 >
-                  Book a Session
+                  Contact Me
                 </Button>
                 <Button 
                   onClick={() => window.location.href = '/auth'}
