@@ -35,7 +35,7 @@ const Index = ({ onAuthRequest }: IndexProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onAuthRequest={onAuthRequest} />
+      <Header onAuthRequest={onAuthRequest} user={user} />
       <main>
         <Hero />
         <About />

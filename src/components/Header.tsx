@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { User as UserType } from '@supabase/supabase-js';
 import ssfLogo from '@/assets/ssf-logo.jpg';
 
 interface HeaderProps {
   onAuthRequest?: () => void;
+  user?: UserType | null;
 }
 
-const Header = ({ onAuthRequest }: HeaderProps) => {
+const Header = ({ onAuthRequest, user }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Prevent scrolling when menu is open
@@ -73,14 +75,25 @@ const Header = ({ onAuthRequest }: HeaderProps) => {
             >
               Contact Me
             </Button>
-            <Button 
-              onClick={() => window.location.href = '/auth'}
-              variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </Button>
+            {user ? (
+              <Button 
+                onClick={() => window.location.href = '/dashboard'}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => window.location.href = '/auth'}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -112,14 +125,25 @@ const Header = ({ onAuthRequest }: HeaderProps) => {
                 >
                   Contact Me
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/auth'}
-                  variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
+                {user ? (
+                  <Button 
+                    onClick={() => window.location.href = '/dashboard'}
+                    variant="outline"
+                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => window.location.href = '/auth'}
+                    variant="outline"
+                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Button>
+                )}
               </div>
             </nav>
           </div>

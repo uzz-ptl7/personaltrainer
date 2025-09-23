@@ -22,29 +22,33 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Saving email to sheets:', { name, email, timestamp });
 
-    const GOOGLE_SHEETS_API_KEY = Deno.env.get('GOOGLE_SHEETS_API_KEY');
-    const SPREADSHEET_ID = '1RAkUwMIBspZU9po1_pjPj_WWDFR2-blv2Zp5-DkAf_Q';
-    const RANGE = 'Sheet1!A:C'; // Adjust range as needed
+    // For now, we'll save to Supabase instead of Google Sheets 
+    // since Google Sheets API requires OAuth2 for append operations
+    const { supabase } = await import('https://esm.sh/@supabase/supabase-js@2');
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Supabase credentials not configured');
+    }
+    
+    const supabaseClient = supabase(supabaseUrl, supabaseKey);
+    
+    // Save to a newsletter_subscribers table instead
+    const { error: dbError } = await supabaseClient
+      .from('newsletter_subscribers')
+      .insert({ 
+        name, 
+        email, 
+        subscribed_at: timestamp 
+      });
 
-    if (!GOOGLE_SHEETS_API_KEY) {
-      throw new Error('Google Sheets API key not configured');
+    if (dbError) {
+      throw new Error(`Database error: ${dbError.message}`);
     }
 
-    // Prepare the data to append
-    const values = [[name, email, timestamp]];
-
-    // Make request to Google Sheets API
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}:append?valueInputOption=USER_ENTERED&key=${GOOGLE_SHEETS_API_KEY}`;
-    
-    const response = await fetch(sheetsUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        values: values
-      })
-    });
+    console.log('Successfully saved to database:', { name, email, timestamp });
 
     if (!response.ok) {
       const errorText = await response.text();

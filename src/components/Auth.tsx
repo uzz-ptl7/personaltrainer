@@ -134,6 +134,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
           title: "Welcome back!",
           description: "You have successfully signed in.",
         });
+        // Redirect to dashboard after successful sign-in
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       toast({
