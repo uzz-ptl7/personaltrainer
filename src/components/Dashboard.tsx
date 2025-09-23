@@ -207,10 +207,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || user.email}</p>
             </div>
           </div>
-          <Button onClick={handleSignOut} variant="outline" size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => window.location.href = '/'} variant="ghost" size="sm">
+              Home
+            </Button>
+            <Button onClick={handleSignOut} variant="outline" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

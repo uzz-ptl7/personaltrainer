@@ -144,7 +144,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     includes_meet: false
   });
   
-  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingService, setEditingService] = useState<string | null>(null);
   const [editServiceData, setEditServiceData] = useState<any>({});
 
   useEffect(() => {
@@ -411,7 +411,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   };
 
   const editService = (service: Service) => {
-    setEditingService(service);
+    setEditingService(service.id);
     setEditServiceData(service);
   };
 
@@ -422,7 +422,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       const { error } = await supabase
         .from('services')
         .update(editServiceData)
-        .eq('id', editingService.id);
+        .eq('id', editingService);
 
       if (error) throw error;
 
@@ -710,7 +710,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
                       <p className="text-2xl font-bold text-foreground">
-                        ${purchases.reduce((sum, purchase) => sum + Number(purchase.amount), 0).toLocaleString()}
+                        {formatCurrency(purchases.reduce((sum, purchase) => sum + Number(purchase.amount), 0))}
                       </p>
                     </div>
                   </div>
@@ -1109,6 +1109,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <CardDescription>{service.description}</CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingService(service.id);
+                            setEditServiceData(service);
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={service.is_active ? "destructive" : "default"}
+                          onClick={() => toggleServiceStatus(service.id, !service.is_active)}
+                        >
+                          {service.is_active ? "Deactivate" : "Activate"}
+                        </Button>
                         <Badge variant={service.is_active ? "default" : "secondary"}>
                           {service.is_active ? "Active" : "Inactive"}
                         </Badge>
@@ -1135,6 +1153,108 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </Card>
               ))}
             </div>
+
+            {/* Service Edit Modal */}
+            {editingService && (
+              <Dialog open={true} onOpenChange={() => setEditingService(null)}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Edit Service</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          value={editServiceData.title || ''}
+                          onChange={(e) => setEditServiceData({...editServiceData, title: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Type</Label>
+                        <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({...editServiceData, type: value})}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="session">Session</SelectItem>
+                            <SelectItem value="program">Program</SelectItem>
+                            <SelectItem value="consultation">Consultation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={editServiceData.description || ''}
+                        onChange={(e) => setEditServiceData({...editServiceData, description: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>Price (RWF)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.price || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, price: Number(e.target.value)})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Duration (weeks)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.duration_weeks || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, duration_weeks: Number(e.target.value)})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Duration (minutes)</Label>
+                        <Input
+                          type="number"
+                          value={editServiceData.duration_minutes || 0}
+                          onChange={(e) => setEditServiceData({...editServiceData, duration_minutes: Number(e.target.value)})}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_nutrition || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_nutrition: e.target.checked})}
+                        />
+                        Includes Nutrition
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_workout || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_workout: e.target.checked})}
+                        />
+                        Includes Workout
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editServiceData.includes_meet || false}
+                          onChange={(e) => setEditServiceData({...editServiceData, includes_meet: e.target.checked})}
+                        />
+                        Includes Video Call
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={updateService} className="flex-1">
+                        Update Service
+                      </Button>
+                      <Button variant="outline" onClick={() => setEditingService(null)} className="flex-1">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </TabsContent>
 
           <TabsContent value="testimonials" className="space-y-6">
@@ -1186,107 +1306,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     )}
                   </div>
 
-                  {/* Service Edit Modal */}
-                  {editingService && (
-                    <Dialog open={true} onOpenChange={() => setEditingService(null)}>
-                      <DialogContent className="sm:max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle>Edit Service</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <Label>Title</Label>
-                              <Input
-                                value={editServiceData.title || ''}
-                                onChange={(e) => setEditServiceData({...editServiceData, title: e.target.value})}
-                              />
-                            </div>
-                            <div>
-                              <Label>Type</Label>
-                              <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({...editServiceData, type: value})}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="session">Session</SelectItem>
-                                  <SelectItem value="program">Program</SelectItem>
-                                  <SelectItem value="consultation">Consultation</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <div>
-                            <Label>Description</Label>
-                            <Textarea
-                              value={editServiceData.description || ''}
-                              onChange={(e) => setEditServiceData({...editServiceData, description: e.target.value})}
-                            />
-                          </div>
-                          <div className="grid md:grid-cols-3 gap-4">
-                            <div>
-                              <Label>Price (RWF)</Label>
-                              <Input
-                                type="number"
-                                value={editServiceData.price || 0}
-                                onChange={(e) => setEditServiceData({...editServiceData, price: Number(e.target.value)})}
-                              />
-                            </div>
-                            <div>
-                              <Label>Duration (weeks)</Label>
-                              <Input
-                                type="number"
-                                value={editServiceData.duration_weeks || 0}
-                                onChange={(e) => setEditServiceData({...editServiceData, duration_weeks: Number(e.target.value)})}
-                              />
-                            </div>
-                            <div>
-                              <Label>Duration (minutes)</Label>
-                              <Input
-                                type="number"
-                                value={editServiceData.duration_minutes || 0}
-                                onChange={(e) => setEditServiceData({...editServiceData, duration_minutes: Number(e.target.value)})}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={editServiceData.includes_nutrition || false}
-                                onChange={(e) => setEditServiceData({...editServiceData, includes_nutrition: e.target.checked})}
-                              />
-                              Includes Nutrition
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={editServiceData.includes_workout || false}
-                                onChange={(e) => setEditServiceData({...editServiceData, includes_workout: e.target.checked})}
-                              />
-                              Includes Workout
-                            </label>
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={editServiceData.includes_meet || false}
-                                onChange={(e) => setEditServiceData({...editServiceData, includes_meet: e.target.checked})}
-                              />
-                              Includes Video Call
-                            </label>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button onClick={updateService} className="flex-1">
-                              Update Service
-                            </Button>
-                            <Button variant="outline" onClick={() => setEditingService(null)} className="flex-1">
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
                 </div>
               </CardContent>
             </Card>

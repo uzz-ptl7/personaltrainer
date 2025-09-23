@@ -43,17 +43,15 @@ const AppContent = () => {
     );
   }
 
-  // If user is authenticated, show dashboard
-  if (user) {
-    return <Dashboard user={user} onSignOut={() => setUser(null)} />;
-  }
-
-  // Otherwise show the main site or auth
+  // Always use BrowserRouter to allow navigation
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index onAuthRequest={() => setUser(null)} />} />
         <Route path="/auth" element={<Auth onAuthChange={setUser} />} />
+        <Route path="/dashboard" element={
+          user ? <Dashboard user={user} onSignOut={() => setUser(null)} /> : <Auth onAuthChange={setUser} />
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
