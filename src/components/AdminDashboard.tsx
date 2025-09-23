@@ -156,23 +156,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .select('*')
         .eq('is_admin', false);
       
-      // Load purchases with profiles and services - using simpler approach
+      // Load purchases and services separately, then join manually
       const { data: purchasesData } = await supabase
         .from('purchases')
-        .select('*, service:services(title, type)')
+        .select('*')
         .order('purchased_at', { ascending: false });
-      
-      // Load bookings with profiles and services - using simpler approach  
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select('*, service:services(title, type, includes_meet)')
-        .order('scheduled_at', { ascending: true });
-      
-      // Load services
+
       const { data: servicesData } = await supabase
         .from('services')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      // Load bookings separately
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('scheduled_at', { ascending: true });
       
       // Load notifications
       const { data: notificationsData } = await supabase
@@ -181,18 +180,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Load video testimonials with profiles
+      // Load video testimonials separately
       const { data: testimonialsData } = await supabase
         .from('video_testimonials')
-        .select('*, profiles(full_name, email)')
+        .select('*')
         .order('created_at', { ascending: false });
 
+      // Manually join data
+      const enrichedPurchases = (purchasesData || []).map(purchase => ({
+        ...purchase,
+        service: servicesData?.find(s => s.id === purchase.service_id) || { title: 'Unknown Service', type: 'unknown' },
+        profiles: clientsData?.find(c => c.user_id === purchase.user_id) || null
+      }));
+
+      const enrichedBookings = (bookingsData || []).map(booking => ({
+        ...booking,
+        service: servicesData?.find(s => s.id === booking.service_id) || { title: 'Unknown Service', type: 'unknown', includes_meet: false },
+        profiles: clientsData?.find(c => c.user_id === booking.user_id) || null
+      }));
+
+      const enrichedTestimonials = (testimonialsData || []).map(testimonial => ({
+        ...testimonial,
+        profiles: clientsData?.find(c => c.user_id === testimonial.user_id) || null
+      }));
+
       setClients(clientsData || []);
-      setPurchases(purchasesData || []);
-      setBookings(bookingsData || []);
+      setPurchases(enrichedPurchases);
+      setBookings(enrichedBookings);
       setServices(servicesData || []);
       setNotifications(notificationsData || []);
-      setVideoTestimonials(testimonialsData || []);
+      setVideoTestimonials(enrichedTestimonials);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -334,7 +351,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const createGoogleMeet = async (bookingId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('create-google-meet', {
-        body: { bookingId }
+        body: { booking_id: bookingId }
       });
 
       if (error) throw error;
@@ -343,7 +360,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: "Google Meet link created successfully",
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -358,7 +375,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     try {
       const { error } = await supabase
         .from('services')
-        .insert(newService);
+        .insert([newService]);
 
       if (error) throw error;
 
@@ -389,16 +406,137 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
-  const markNotificationRead = async (notificationId: string) => {
+  const toggleServiceStatus = async (serviceId: string, isActive: boolean) => {
     try {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
+      const { error } = await supabase
+        .from('services')
+        .update({ is_active: isActive })
+        .eq('id', serviceId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Service ${isActive ? 'activated' : 'deactivated'} successfully`,
+      });
       
       loadData();
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update service status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const markNotificationRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+      loadData();
+    } catch (error) {
       console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const approveTestimonial = async (testimonialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('video_testimonials')
+        .update({ is_approved: true })
+        .eq('id', testimonialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Testimonial approved successfully",
+      });
+      
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve testimonial",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const rejectTestimonial = async (testimonialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('video_testimonials')
+        .delete()
+        .eq('id', testimonialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Testimonial rejected and removed",
+      });
+      
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject testimonial",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleFeature = async (testimonialId: string, featured: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('video_testimonials')
+        .update({ is_featured: featured })
+        .eq('id', testimonialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Testimonial ${featured ? 'featured' : 'unfeatured'} successfully`,
+      });
+      
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update testimonial",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTestimonial = async (testimonialId: string) => {
+    try {
+      const { error } = await supabase
+        .from('video_testimonials')
+        .delete()
+        .eq('id', testimonialId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Testimonial deleted successfully",
+      });
+      
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete testimonial",
+        variant: "destructive",
+      });
     }
   };
 
@@ -410,16 +548,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const upcomingSessions = bookings.filter(booking => 
+    new Date(booking.scheduled_at) > new Date() && booking.status !== 'cancelled'
+  );
+
+  const pendingTestimonials = videoTestimonials.filter(t => !t.is_approved);
+  const approvedTestimonials = videoTestimonials.filter(t => t.is_approved);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading admin dashboard...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -427,140 +584,249 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
-            <div>
-              <h1 className="text-2xl font-bold text-gradient-primary">Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
+      <div className="bg-card border-b border-border sticky top-0 z-40">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
+              <div>
+                <h1 className="font-heading font-bold text-xl text-foreground">Admin Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Bell className="h-6 w-6 text-muted-foreground" />
-              {notifications.filter(n => !n.is_read).length > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {notifications.filter(n => !n.is_read).length}
-                </Badge>
-              )}
-            </div>
-            <Button onClick={onSignOut} variant="outline" size="sm">
+            <Button
+              onClick={onSignOut}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="clients" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+      {/* Main Content */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid grid-cols-5 w-fit">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="bookings">Sessions</TabsTrigger>
+            <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="clients" className="space-y-6">
-            <div className="grid gap-6">
-              {clients.map((client) => (
-                <Card key={client.user_id} className="bg-gradient-card border-border">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {client.full_name}
-                          <Badge variant={client.is_online ? "default" : "secondary"}>
-                            {client.is_online ? "Online" : "Offline"}
-                          </Badge>
-                          {client.is_blocked && (
-                            <Badge variant="destructive">Blocked</Badge>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Users className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
+                      <p className="text-2xl font-bold text-foreground">{clients.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Upcoming Sessions</p>
+                      <p className="text-2xl font-bold text-foreground">{upcomingSessions.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <DollarSign className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                      <p className="text-2xl font-bold text-foreground">
+                        ${purchases.reduce((sum, purchase) => sum + Number(purchase.amount), 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Video className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Testimonials</p>
+                      <p className="text-2xl font-bold text-foreground">{approvedTestimonials.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activities */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="bg-gradient-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Recent Notifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {notifications.slice(0, 5).map((notification) => (
+                      <div key={notification.id} className={`p-3 rounded-lg border ${
+                        notification.is_read ? 'bg-muted/50' : 'bg-primary/5 border-primary/20'
+                      }`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-foreground">{notification.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {formatDate(notification.created_at)}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => markNotificationRead(notification.id)}
+                            >
+                              Mark Read
+                            </Button>
                           )}
-                        </CardTitle>
-                        <CardDescription>
-                          {client.email} • {client.phone_country_code} {client.phone}
-                        </CardDescription>
-                        <p className="text-sm text-muted-foreground">
-                          {client.country} • Joined {formatDate(client.created_at)}
-                        </p>
-                        {!client.is_online && (
-                          <p className="text-sm text-muted-foreground">
-                            Last seen: {formatDate(client.last_seen)}
-                          </p>
-                        )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => window.open(`mailto:${client.email}`)}
+                    ))}
+                    {notifications.length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">No notifications</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5" />
+                    Upcoming Sessions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {upcomingSessions.slice(0, 5).map((session) => (
+                      <div key={session.id} className="p-3 border border-border rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {session.profiles?.full_name || 'Unknown Client'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {session.service.title} • {formatDate(session.scheduled_at)}
+                            </p>
+                          </div>
+                          <Badge className={getStatusColor(session.status)}>
+                            {session.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                    {upcomingSessions.length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">No upcoming sessions</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="clients" className="space-y-6">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Client Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {clients.map((client) => (
+                    <div key={client.user_id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{client.full_name}</h3>
+                            <div className={`w-2 h-2 rounded-full ${client.is_online ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                            <span className="text-xs text-muted-foreground">
+                              {client.is_online ? 'Online' : `Last seen ${formatDate(client.last_seen)}`}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {client.phone_country_code} {client.phone} • {client.country}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`mailto:${client.email}`}
+                          className="p-2 text-muted-foreground hover:text-primary transition-smooth"
                         >
                           <Mail className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => window.open(`tel:${client.phone_country_code}${client.phone}`)}
+                        </a>
+                        <a
+                          href={`tel:${client.phone_country_code}${client.phone}`}
+                          className="p-2 text-muted-foreground hover:text-primary transition-smooth"
                         >
                           <Phone className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => window.open(`https://wa.me/${client.phone_country_code.replace('+', '')}${client.phone}`)}
+                        </a>
+                        <a
+                          href={`https://wa.me/${client.phone_country_code}${client.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-muted-foreground hover:text-primary transition-smooth"
                         >
                           <MessageCircle className="h-4 w-4" />
-                        </Button>
+                        </a>
                         <Button
                           size="sm"
                           variant={client.is_blocked ? "default" : "destructive"}
                           onClick={() => blockClient(client.user_id, !client.is_blocked)}
                         >
-                          {client.is_blocked ? <CheckCircle className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                          {client.is_blocked ? (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Unblock
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="h-4 w-4 mr-1" />
+                              Block
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold mb-2">Purchases</h4>
-                        {purchases
-                          .filter(p => p.user_id === client.user_id)
-                          .map(purchase => (
-                            <div key={purchase.id} className="text-sm text-muted-foreground">
-                              {purchase.service.title} - {formatCurrency(purchase.amount)}
-                              <Badge 
-                                variant={purchase.payment_status === 'completed' ? "default" : "secondary"}
-                                className="ml-2"
-                              >
-                                {purchase.payment_status}
-                              </Badge>
-                            </div>
-                          ))}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2">Upcoming Sessions</h4>
-                        {bookings
-                          .filter(b => b.user_id === client.user_id && new Date(b.scheduled_at) > new Date())
-                          .map(booking => (
-                            <div key={booking.id} className="text-sm text-muted-foreground">
-                              {booking.service.title} - {formatDate(booking.scheduled_at)}
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="bookings" className="space-y-6">
+          <TabsContent value="sessions" className="space-y-6">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
-                <CardTitle>Schedule New Session</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Schedule New Session
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -571,7 +837,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <SelectValue placeholder="Select client" />
                       </SelectTrigger>
                       <SelectContent>
-                        {clients.map(client => (
+                        {clients.map((client) => (
                           <SelectItem key={client.user_id} value={client.user_id}>
                             {client.full_name}
                           </SelectItem>
@@ -586,7 +852,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <SelectValue placeholder="Select service" />
                       </SelectTrigger>
                       <SelectContent>
-                        {services.filter(s => s.is_active).map(service => (
+                        {services.filter(s => s.is_active).map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.title}
                           </SelectItem>
@@ -596,7 +862,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   </div>
                 </div>
                 <div>
-                  <Label>Scheduled Date & Time</Label>
+                  <Label>Date & Time</Label>
                   <Input
                     type="datetime-local"
                     value={newBooking.scheduled_at}
@@ -608,58 +874,79 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   <Textarea
                     value={newBooking.notes}
                     onChange={(e) => setNewBooking({...newBooking, notes: e.target.value})}
-                    placeholder="Session notes..."
+                    placeholder="Session notes or special instructions"
                   />
                 </div>
                 <Button onClick={scheduleBooking}>
-                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Schedule Session
                 </Button>
               </CardContent>
             </Card>
 
-            <div className="grid gap-4">
-              {bookings.map((booking) => (
-                <Card key={booking.id} className="bg-gradient-card border-border">
-                  <CardHeader>
-                  <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{booking.profiles.full_name}</CardTitle>
-                        <CardDescription>
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  All Sessions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {bookings.map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground">
+                            {booking.profiles?.full_name || 'Unknown Client'}
+                          </h3>
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
                           {booking.service.title} • {formatDate(booking.scheduled_at)}
-                        </CardDescription>
+                        </p>
+                        {booking.notes && (
+                          <p className="text-sm text-muted-foreground mt-1">Notes: {booking.notes}</p>
+                        )}
                       </div>
-                      <div className="flex gap-2">
-                        <Badge variant={booking.status === 'completed' ? "default" : "secondary"}>
-                          {booking.status}
-                        </Badge>
-                        {!booking.meet_link && booking.service.includes_meet && (
-                          <Button size="sm" onClick={() => createGoogleMeet(booking.id)}>
+                      <div className="flex items-center gap-2">
+                        {booking.service.includes_meet && !booking.meet_link && (
+                          <Button
+                            size="sm"
+                            onClick={() => createGoogleMeet(booking.id)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Video className="h-4 w-4 mr-1" />
                             Create Meet
                           </Button>
                         )}
                         {booking.meet_link && (
-                          <Button size="sm" variant="outline" onClick={() => window.open(booking.meet_link)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(booking.meet_link, '_blank')}
+                          >
+                            <Video className="h-4 w-4 mr-1" />
                             Join Meet
                           </Button>
                         )}
                       </div>
                     </div>
-                  </CardHeader>
-                  {booking.notes && (
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{booking.notes}</p>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="services" className="space-y-6">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
-                <CardTitle>Create New Service</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  Create New Service
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -678,9 +965,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="program">Training Program</SelectItem>
+                        <SelectItem value="session">Session</SelectItem>
+                        <SelectItem value="program">Program</SelectItem>
                         <SelectItem value="consultation">Consultation</SelectItem>
-                        <SelectItem value="session">Personal Session</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -690,7 +977,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   <Textarea
                     value={newService.description}
                     onChange={(e) => setNewService({...newService, description: e.target.value})}
-                    placeholder="Service description..."
+                    placeholder="Service description"
                   />
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
@@ -699,7 +986,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Input
                       type="number"
                       value={newService.price}
-                      onChange={(e) => setNewService({...newService, price: parseFloat(e.target.value)})}
+                      onChange={(e) => setNewService({...newService, price: Number(e.target.value)})}
                     />
                   </div>
                   <div>
@@ -707,19 +994,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Input
                       type="number"
                       value={newService.duration_weeks}
-                      onChange={(e) => setNewService({...newService, duration_weeks: parseInt(e.target.value)})}
+                      onChange={(e) => setNewService({...newService, duration_weeks: Number(e.target.value)})}
                     />
                   </div>
                   <div>
-                    <Label>Session Duration (minutes)</Label>
+                    <Label>Session Length (minutes)</Label>
                     <Input
                       type="number"
                       value={newService.duration_minutes}
-                      onChange={(e) => setNewService({...newService, duration_minutes: parseInt(e.target.value)})}
+                      onChange={(e) => setNewService({...newService, duration_minutes: Number(e.target.value)})}
                     />
                   </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-6">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -878,206 +1165,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Total Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-primary">
-                    {formatCurrency(purchases.reduce((sum, p) => sum + p.amount, 0))}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Total Clients
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-primary">{clients.length}</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-card border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5" />
-                    Sessions This Month
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-primary">
-                    {bookings.filter(b => {
-                      const bookingDate = new Date(b.scheduled_at);
-                      const now = new Date();
-                      return bookingDate.getMonth() === now.getMonth() && 
-                             bookingDate.getFullYear() === now.getFullYear();
-                    }).length}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle>Recent Purchases</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {purchases
-                    .sort((a, b) => new Date(b.purchased_at).getTime() - new Date(a.purchased_at).getTime())
-                    .slice(0, 10)
-                    .map((purchase) => (
-                      <div key={purchase.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                        <div>
-                          <p className="font-semibold">{purchase.profiles.full_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {purchase.service.title} • {formatDate(purchase.purchased_at)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-primary">{formatCurrency(purchase.amount)}</p>
-                          <Badge variant={purchase.payment_status === 'completed' ? "default" : "secondary"}>
-                            {purchase.payment_status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="testimonials" className="space-y-6">
-            <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Video Testimonials Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Pending Approval */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-2">Pending Approval ({pendingTestimonials.length})</h4>
-                    {pendingTestimonials.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No testimonials pending approval</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {pendingTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium">{testimonial.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => approveTestimonial(testimonial.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => rejectTestimonial(testimonial.id)}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Approved Testimonials */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-2">Approved ({approvedTestimonials.length})</h4>
-                    {approvedTestimonials.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No approved testimonials</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
-                            <div className="flex-1">
-                              <div className="font-medium">{testimonial.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {testimonial.profiles?.full_name || 'Anonymous'} • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => toggleFeature(testimonial.id, !testimonial.is_featured)}
-                              >
-                                {testimonial.is_featured ? 'Unfeature' : 'Feature'}
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => deleteTestimonial(testimonial.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
-            <div className="space-y-4">
-              {notifications.map((notification) => (
-                <Card 
-                  key={notification.id} 
-                  className={`bg-gradient-card border-border cursor-pointer ${!notification.is_read ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => !notification.is_read && markNotificationRead(notification.id)}
-                >
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        {notification.type === 'success' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                        {notification.type === 'info' && <AlertCircle className="h-5 w-5 text-blue-500" />}
-                        {notification.type === 'warning' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
-                        {notification.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        {!notification.is_read && (
-                          <Badge variant="destructive" className="text-xs">New</Badge>
-                        )}
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(notification.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{notification.message}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
         </Tabs>
       </div>
