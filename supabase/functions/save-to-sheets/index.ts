@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // For now, we'll save to Supabase instead of Google Sheets 
     // since Google Sheets API requires OAuth2 for append operations
-    const { supabase } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -33,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Supabase credentials not configured');
     }
     
-    const supabaseClient = supabase(supabaseUrl, supabaseKey);
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
     
     // Save to a newsletter_subscribers table instead
     const { error: dbError } = await supabaseClient

@@ -99,7 +99,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating Google Meet:', error);
     return new Response(JSON.stringify({
-      error: error.message || 'Failed to create Google Meet link'
+      error: error instanceof Error ? error.message : 'Failed to create Google Meet link'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
