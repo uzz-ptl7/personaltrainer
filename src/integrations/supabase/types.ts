@@ -14,7 +14,296 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          meet_id: string | null
+          meet_link: string | null
+          notes: string | null
+          purchase_id: string
+          scheduled_at: string
+          service_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meet_id?: string | null
+          meet_link?: string | null
+          notes?: string | null
+          purchase_id: string
+          scheduled_at: string
+          service_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meet_id?: string | null
+          meet_link?: string | null
+          notes?: string | null
+          purchase_id?: string
+          scheduled_at?: string
+          service_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          subscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          is_admin: boolean | null
+          is_blocked: boolean | null
+          is_online: boolean | null
+          last_seen: string | null
+          phone: string | null
+          phone_country_code: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          is_online?: boolean | null
+          last_seen?: string | null
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          is_online?: boolean | null
+          last_seen?: string | null
+          phone?: string | null
+          phone_country_code?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string
+          purchased_at: string | null
+          service_id: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          purchased_at?: string | null
+          service_id: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string
+          purchased_at?: string | null
+          service_id?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          duration_weeks: number | null
+          id: string
+          includes_meet: boolean | null
+          includes_nutrition: boolean | null
+          includes_workout: boolean | null
+          is_active: boolean | null
+          price: number
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          id?: string
+          includes_meet?: boolean | null
+          includes_nutrition?: boolean | null
+          includes_workout?: boolean | null
+          is_active?: boolean | null
+          price?: number
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          duration_weeks?: number | null
+          id?: string
+          includes_meet?: boolean | null
+          includes_nutrition?: boolean | null
+          includes_workout?: boolean | null
+          is_active?: boolean | null
+          price?: number
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      video_testimonials: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_approved: boolean | null
+          is_featured: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
