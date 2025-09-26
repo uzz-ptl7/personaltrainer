@@ -138,7 +138,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
         onClick={() => window.location.href = '/'}
         variant="ghost"
         size="sm"
-        className="absolute top-4 left-4 text-foreground hover:text-primary hover:bg-accent"
+        className="absolute top-4 left-4 text-foreground hover:text-primary hover:bg-accent hover:text-black"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Home
