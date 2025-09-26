@@ -106,7 +106,7 @@ const Footer = () => {
             © {currentYear} Salim Saleh Fitness. All Rights Reserved.
           </p>
           <p className="font-accent text-primary mt-2 text-lg">
-            Made with ❤️ in Rwanda by{" "}
+            Made in Rwanda by the{" "}
             <a 
               href="https://www.sitecraftersz.co/" 
               className="underline hover:text-primary-glow transition-smooth" 
