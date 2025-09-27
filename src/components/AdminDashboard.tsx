@@ -29,7 +29,9 @@ import {
   LogOut,
   Video,
   X,
-  Download
+  Download,
+  ShoppingBag,
+  Menu
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
@@ -157,6 +159,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   
   const [editingService, setEditingService] = useState<string | null>(null);
   const [editServiceData, setEditServiceData] = useState<any>({});
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   // State for available services for selected client
   const [availableServices, setAvailableServices] = useState<{ id: string; title: string }[]>([]);
@@ -167,26 +171,60 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         setAvailableServices([]);
         return;
       }
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(`
-          id,
-          service_id,
-          services ( id, title )
-        `)
-        .eq('user_id', newBooking.user_id)
-        .eq('payment_status', 'completed');
-      if (error) {
+      
+      console.log('🔍 AdminDashboard: Fetching services for client:', newBooking.user_id);
+      
+      try {
+        // First, let's check ALL purchases for this user (regardless of payment status)
+        const { data: allPurchasesData, error: allPurchasesError } = await supabase
+          .from('purchases')
+          .select('id, service_id, payment_status, user_id')
+          .eq('user_id', newBooking.user_id);
+        
+        console.log('🔍 ALL purchases for this user (any status):', allPurchasesData);
+        
+        // If there are pending purchases, let's log them for manual update
+        if (allPurchasesData && allPurchasesData.length > 0) {
+          const pendingPurchases = allPurchasesData.filter(p => p.payment_status === 'pending');
+          if (pendingPurchases.length > 0) {
+            console.log('⚠️ Found pending purchases that could be marked as completed:');
+            pendingPurchases.forEach(p => {
+              console.log(`- Purchase ID: ${p.id}, Service ID: ${p.service_id}, Status: ${p.payment_status}`);
+            });
+            console.log('💡 You can update these to "completed" status in the database or using the function below');
+            console.log('🔧 To fix this, run in console: window.updatePurchaseStatus("161a8654-c76d-48e8-b89f-b22e4b9c2c7f", "completed")');
+          }
+        }
+        
+        // Get client's completed purchases
+        const { data: purchasesData, error: purchasesError } = await supabase
+          .from('purchases')
+          .select('id, service_id, payment_status, user_id')
+          .eq('user_id', newBooking.user_id)
+          .eq('payment_status', 'completed');
+        
+        if (purchasesError) throw purchasesError;
+        console.log('🛒 Client purchases (completed only):', purchasesData);
+
+        if (!purchasesData || purchasesData.length === 0) {
+          setAvailableServices([]);
+          return;
+        }
+
+        // Get services for these purchases
+        const serviceIds = purchasesData.map(p => p.service_id);
+        const { data: servicesData, error: servicesError } = await supabase
+          .from('services')
+          .select('id, title')
+          .in('id', serviceIds);
+        
+        if (servicesError) throw servicesError;
+        console.log('🎯 Available services for client:', servicesData);
+
+        setAvailableServices(servicesData || []);
+      } catch (error) {
         console.error('Error fetching services for client:', error);
         setAvailableServices([]);
-      } else {
-        const mapped =
-          data && Array.isArray(data)
-            ? data
-                .filter((p: any) => p.services)
-                .map((p: any) => ({ id: p.services.id, title: p.services.title }))
-            : [];
-        setAvailableServices(mapped);
       }
     };
     fetchClientServices();
@@ -204,11 +242,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     );
   };
 
+  // Temporary helper function to update purchase status
+  const updatePurchaseStatus = async (purchaseId: string, newStatus: 'completed' | 'pending' | 'failed' | 'refunded') => {
+    try {
+      const { error } = await supabase
+        .from('purchases')
+        .update({ payment_status: newStatus })
+        .eq('id', purchaseId);
+      
+      if (error) throw error;
+      
+      console.log(`✅ Updated purchase ${purchaseId} to ${newStatus} status`);
+      toast({
+        title: "Success",
+        description: `Purchase status updated to ${newStatus}`,
+      });
+      
+      // Reload data
+      loadData();
+    } catch (error) {
+      console.error('Error updating purchase status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update purchase status",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     loadData();
     const cleanup = setupRealtimeSubscriptions();
+    
+    // Add helper function to window for console access
+    (window as any).updatePurchaseStatus = updatePurchaseStatus;
+    
     return cleanup;
   }, []);
+
+  // Handle body scroll when sidebar is open
+  useEffect(() => {
+    if (isMobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileSidebarOpen]);
 
   const loadData = async () => {
     try {
@@ -737,22 +821,113 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isMobileSidebarOpen ? 'overflow-hidden' : ''}`}>
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
+        isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="SSF Logo" className="h-8 w-8 rounded-full object-cover" />
+              <div>
+                <h1 className="font-heading font-bold lg:text-lg md:text-lg text-sm text-foreground">Admin Dashboard</h1>
+                <p className="text-xs text-muted-foreground">Salim Saleh Fitness</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-2">
+            {[
+              { id: 'overview', label: 'Overview', icon: Settings },
+              { id: 'clients', label: 'Clients', icon: Users },
+              { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
+              { id: 'sessions', label: 'Sessions', icon: CalendarIcon },
+              { id: 'services', label: 'Services', icon: DollarSign },
+              { id: 'testimonials', label: 'Testimonials', icon: Video },
+              { id: 'newsletter', label: 'Newsletter', icon: Mail },
+            ].map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMobileSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <IconComponent className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-border flex-shrink-0">
+          <Button
+            onClick={onSignOut}
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-5 w-5 mr-3" />
+            Sign Out
+          </Button>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setIsMobileSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              
               <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
               <div>
-                <h1 className="font-heading font-bold text-xl text-foreground">Admin Dashboard</h1>
+                <h1 className="font-heading font-bold lg:text-xl text-lg text-foreground">Admin Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
               </div>
             </div>
+            
+            {/* Desktop Sign Out Button */}
             <Button
               onClick={onSignOut}
               variant="outline"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="hidden lg:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
@@ -762,18 +937,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid grid-cols-6 w-fit">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-            <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 w-full overflow-hidden">
+          {/* Desktop Tabs */}
+          <div className="hidden lg:block w-full overflow-x-auto">
+            <TabsList className="grid grid-cols-7 w-fit">
+              <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
+              <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
+              <TabsTrigger value="sessions" className="whitespace-nowrap">Sessions</TabsTrigger>
+              <TabsTrigger value="services" className="whitespace-nowrap">Services</TabsTrigger>
+              <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
+              <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6 w-full overflow-x-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card>
                 <CardContent className="p-6">
@@ -929,7 +1108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </div>
           </TabsContent>
 
-          <TabsContent value="clients" className="space-y-6">
+          <TabsContent value="clients" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -940,23 +1119,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <CardContent>
                 <div className="space-y-4">
                   {clients.map((client) => (
-                    <div key={client.user_id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-foreground">{client.full_name}</h3>
-                            <div className={`w-2 h-2 rounded-full ${client.is_online ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                            <span className="text-xs text-muted-foreground">
-                              {client.is_online ? 'Online' : `Last seen ${formatDate(client.last_seen)}`}
-                            </span>
+                    <div key={client.user_id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg gap-4">
+                      <div className="flex items-center space-x-4 min-w-0 flex-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <h3 className="font-semibold text-foreground truncate">{client.full_name}</h3>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${client.is_online ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                              <span className="text-xs text-muted-foreground">
+                                {client.is_online ? 'Online' : `Last seen ${formatDate(client.last_seen)}`}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                          <p className="text-sm text-muted-foreground truncate">{client.email}</p>
                           <p className="text-sm text-muted-foreground">
                             {client.phone_country_code} {client.phone} • {client.country}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <a
                           href={`mailto:${client.email}`}
                           className="p-2 text-muted-foreground hover:text-primary transition-smooth"
@@ -1005,7 +1186,76 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sessions" className="space-y-6">
+          <TabsContent value="purchases" className="space-y-6 w-full overflow-x-hidden">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5" />
+                  Purchase Management
+                </CardTitle>
+                <CardDescription>
+                  Manage client purchases and payment statuses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {purchases.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No purchases found.
+                    </p>
+                  ) : (
+                    purchases.map((purchase) => (
+                      <div key={purchase.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {purchase.profiles?.full_name || 'Unknown Client'}
+                            </h3>
+                            <Badge variant={
+                              purchase.payment_status === 'completed' ? 'default' :
+                              purchase.payment_status === 'pending' ? 'secondary' :
+                              purchase.payment_status === 'failed' ? 'destructive' : 'outline'
+                            } className="w-fit">
+                              {purchase.payment_status}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-foreground font-medium truncate">
+                              {purchase.service?.title || 'Unknown Service'} ({purchase.service?.type})
+                            </p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {purchase.profiles?.email || 'No email'} • {formatCurrency(purchase.amount)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Purchased: {formatDate(purchase.purchased_at)} • ID: {purchase.id.slice(0, 8)}...
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Select
+                            value={purchase.payment_status}
+                            onValueChange={(newStatus) => updatePurchaseStatus(purchase.id, newStatus as any)}
+                          >
+                            <SelectTrigger className="w-full sm:w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="failed">Failed</SelectItem>
+                              <SelectItem value="refunded">Refunded</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1103,24 +1353,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <CardContent>
                 <div className="space-y-4">
                   {bookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">
+                    <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-border rounded-lg gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-foreground truncate">
                             {booking.profiles?.full_name || 'Unknown Client'}
                           </h3>
-                          <Badge className={getStatusColor(booking.status)}>
+                          <Badge className={`${getStatusColor(booking.status)} w-fit`}>
                             {booking.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground truncate">
                           {booking.service.title} • {formatDate(booking.scheduled_at)}
                         </p>
                         {booking.notes && (
-                          <p className="text-sm text-muted-foreground mt-1">Notes: {booking.notes}</p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">Notes: {booking.notes}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-shrink-0">
                         {booking.service.includes_meet && !booking.meet_link && (
                           <Button
                             size="sm"
@@ -1149,7 +1399,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="services" className="space-y-6">
+          <TabsContent value="services" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1157,8 +1407,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   Create New Service
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+              <CardContent className="space-y-4 overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Title</Label>
                     <Input
@@ -1215,7 +1465,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     />
                   </div>
                 </div>
-                <div className="flex gap-6">
+                <div className="flex lg:flex-row md:flex-row flex-col gap-6">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1252,51 +1502,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               {services.map((service) => (
                 <Card key={service.id} className="bg-gradient-card border-border">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{service.title}</CardTitle>
-                        <CardDescription>{service.description}</CardDescription>
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                      {/* Title and Description */}
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="break-words text-base sm:text-lg">{service.title}</CardTitle>
+                        <CardDescription className="break-words text-sm mt-1">{service.description}</CardDescription>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setEditingService(service.id);
-                            setEditServiceData(service);
-                          }}
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={service.is_active ? "destructive" : "default"}
-                          onClick={() => toggleServiceStatus(service.id, !service.is_active)}
-                        >
-                          {service.is_active ? "Deactivate" : "Activate"}
-                        </Button>
-                        <Badge variant={service.is_active ? "default" : "secondary"}>
-                          {service.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        <span className="text-lg font-bold text-primary">
-                          {formatCurrency(service.price)}
-                        </span>
+                      
+                      {/* Action Buttons - Stack on mobile, horizontal on large screens */}
+                      <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingService(service.id);
+                              setEditServiceData(service);
+                            }}
+                            className="w-full sm:w-auto lg:w-auto whitespace-nowrap"
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={service.is_active ? "destructive" : "default"}
+                            onClick={() => toggleServiceStatus(service.id, !service.is_active)}
+                            className="w-full sm:w-auto lg:w-auto whitespace-nowrap"
+                          >
+                            {service.is_active ? "Deactivate" : "Activate"}
+                          </Button>
+                        </div>
+                        
+                        {/* Status and Price */}
+                        <div className="flex items-center justify-between sm:justify-start lg:justify-between gap-2 mt-2 lg:mt-2">
+                          <Badge variant={service.is_active ? "default" : "secondary"} className="text-xs whitespace-nowrap">
+                            {service.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                          <span className="text-base sm:text-lg font-bold text-primary whitespace-nowrap">
+                            {formatCurrency(service.price)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">{service.type}</Badge>
+                      <Badge variant="outline" className="text-xs whitespace-nowrap">{service.type}</Badge>
                       {service.duration_weeks > 0 && (
-                        <Badge variant="outline">{service.duration_weeks} weeks</Badge>
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">{service.duration_weeks} weeks</Badge>
                       )}
                       {service.duration_minutes > 0 && (
-                        <Badge variant="outline">{service.duration_minutes} minutes</Badge>
+                        <Badge variant="outline" className="text-xs whitespace-nowrap">{service.duration_minutes} min</Badge>
                       )}
-                      {service.includes_nutrition && <Badge variant="outline">Nutrition</Badge>}
-                      {service.includes_workout && <Badge variant="outline">Workout</Badge>}
-                      {service.includes_meet && <Badge variant="outline">Video Call</Badge>}
+                      {service.includes_nutrition && <Badge variant="outline" className="text-xs whitespace-nowrap">Nutrition</Badge>}
+                      {service.includes_workout && <Badge variant="outline" className="text-xs whitespace-nowrap">Workout</Badge>}
+                      {service.includes_meet && <Badge variant="outline" className="text-xs whitespace-nowrap">Video Call</Badge>}
                     </div>
                   </CardContent>
                 </Card>
@@ -1406,7 +1667,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             )}
           </TabsContent>
 
-          <TabsContent value="newsletter" className="space-y-6">
+          <TabsContent value="newsletter" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -1450,7 +1711,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="testimonials" className="space-y-6">
+          <TabsContent value="testimonials" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

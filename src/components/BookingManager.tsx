@@ -60,20 +60,16 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
   }, [selectedClient]);
 
   const loadClientsAndPurchases = async () => {
+    console.log('🔄 loadClientsAndPurchases function called');
     try {
-      // Get purchases with joined profiles + services
-      const { data: purchasesData, error } = await supabase
+      // First get all purchases with services
+      const { data: purchasesData, error: purchasesError } = await supabase
         .from('purchases')
         .select(`
           id,
           user_id,
           service_id,
           payment_status,
-          profiles:user_id (
-            user_id,
-            full_name,
-            email
-          ),
           services:service_id (
             id,
             title,
@@ -84,32 +80,54 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
         `)
         .eq('payment_status', 'completed');
 
-      if (error) throw error;
+      if (purchasesError) throw purchasesError;
 
-      // Map purchases into clean objects, filtering out invalid joins
+      console.log('Raw purchases data:', purchasesData);
+
+      // Get all profiles separately
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          user_id,
+          full_name,
+          email
+        `);
+
+      if (profilesError) throw profilesError;
+
+      console.log('Raw profiles data:', profilesData);
+
+      // Create a map of profiles for easy lookup
+      const profilesMap = new Map(
+        (profilesData || []).map(profile => [profile.user_id, profile])
+      );
+
+      // Map purchases with profiles and services
       const enrichedPurchases: Purchase[] = (purchasesData || [])
-        .filter(
-          (p) =>
-            p.profiles !== null &&
-            typeof p.profiles === "object" &&
-            p.profiles !== null &&
-            p.profiles !== null && !("error" in (p.profiles as object)) &&
-            "user_id" in (p.profiles as object) &&
-            "full_name" in (p.profiles as object) &&
-            "email" in (p.profiles as object) &&
-            p.services &&
+        .filter((p) => {
+          // Check if services join was successful
+          const hasValidService = p.services &&
             typeof p.services === "object" &&
-            "id" in p.services
-        )
+            !Array.isArray(p.services) &&
+            "id" in p.services &&
+            "title" in p.services;
+          
+          // Check if we have a profile for this user
+          const hasProfile = profilesMap.has(p.user_id);
+          
+          console.log('Purchase:', p.id, 'Service valid:', hasValidService, 'Has profile:', hasProfile);
+          
+          return hasValidService && hasProfile;
+        })
         .map((p) => ({
           ...p,
           services: p.services as Service,
-          profiles: p.profiles !== null && typeof p.profiles === "object" && !(p.profiles && "error" in p.profiles)
-            ? (p.profiles as Profile)
-            : undefined,
+          profiles: profilesMap.get(p.user_id) as Profile,
         }));
 
       setPurchases(enrichedPurchases);
+
+      console.log('Final enriched purchases:', enrichedPurchases);
 
       // Unique clients
       const uniqueClients = Array.from(
@@ -118,6 +136,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
         ).values()
       ).filter(client => client);
 
+      console.log('Unique clients:', uniqueClients);
       setClients(uniqueClients as Profile[]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -130,14 +149,21 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
   };
 
   const loadClientServices = (clientId: string) => {
+    console.log('🎯 loadClientServices called for client:', clientId);
+    console.log('📊 All purchases available:', purchases);
+    
     // Services the client has purchased
     const clientPurchases = purchases.filter(p => p.user_id === clientId);
+    console.log('Client purchases found:', clientPurchases);
+    
     const clientServices = clientPurchases.map(p => p.services);
+    console.log('Client services mapped:', clientServices);
 
     // Deduplicate services by ID
     const uniqueServices = Array.from(
       new Map(clientServices.map(service => [service.id, service])).values()
     );
+    console.log('Unique services:', uniqueServices);
 
     setAvailableServices(uniqueServices);
     setSelectedService('');
@@ -214,7 +240,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          Create New Booking
+          Create New Booking (BookingManager Component)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
