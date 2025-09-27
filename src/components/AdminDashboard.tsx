@@ -1368,7 +1368,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-black">
                             <div className="flex-1">
                               <div className="font-medium">{testimonial.title}</div>
                               <div className="text-sm text-muted-foreground">
