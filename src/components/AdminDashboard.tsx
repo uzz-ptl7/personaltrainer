@@ -158,6 +158,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [editingService, setEditingService] = useState<string | null>(null);
   const [editServiceData, setEditServiceData] = useState<any>({});
 
+  // State for available services for selected client
+  const [availableServices, setAvailableServices] = useState<{ id: string; title: string }[]>([]);
+
+  useEffect(() => {
+    const fetchClientServices = async () => {
+      if (!newBooking.user_id) {
+        setAvailableServices([]);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('purchases')
+        .select(`
+          id,
+          service_id,
+          services ( id, title )
+        `)
+        .eq('user_id', newBooking.user_id)
+        .eq('payment_status', 'completed');
+      if (error) {
+        console.error('Error fetching services for client:', error);
+        setAvailableServices([]);
+      } else {
+        const mapped =
+          data && Array.isArray(data)
+            ? data
+                .filter((p: any) => p.services)
+                .map((p: any) => ({ id: p.services.id, title: p.services.title }))
+            : [];
+        setAvailableServices(mapped);
+      }
+    };
+    fetchClientServices();
+  }, [newBooking.user_id]);
+
   // Get available services for selected client
   const getAvailableServicesForClient = (clientId: string) => {
     const clientPurchases = purchases.filter(p => 
@@ -926,12 +960,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <a
                           href={`mailto:${client.email}`}
                           className="p-2 text-muted-foreground hover:text-primary transition-smooth"
+                          title={`Send email to ${client.full_name}`}
                         >
                           <Mail className="h-4 w-4" />
                         </a>
                         <a
                           href={`tel:${client.phone_country_code}${client.phone}`}
                           className="p-2 text-muted-foreground hover:text-primary transition-smooth"
+                          title={`Call ${client.full_name}`}
                         >
                           <Phone className="h-4 w-4" />
                         </a>
@@ -940,6 +976,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 text-muted-foreground hover:text-primary transition-smooth"
+                          title={`WhatsApp ${client.full_name}`}
                         >
                           <MessageCircle className="h-4 w-4" />
                         </a>
@@ -969,142 +1006,181 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           </TabsContent>
 
           <TabsContent value="sessions" className="space-y-6">
-            <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Schedule New Session
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Client</Label>
-                    <Select 
-                      value={newBooking.user_id} 
-                      onValueChange={(value) => {
-                        setNewBooking({...newBooking, user_id: value, service_id: ''});
-                        setSelectedClient(clients.find(c => c.user_id === value) || null);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.user_id} value={client.user_id}>
-                            {client.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Service</Label>
-                    <Select 
-                      value={newBooking.service_id} 
-                      onValueChange={(value) => setNewBooking({...newBooking, service_id: value})}
-                      disabled={!newBooking.user_id}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {newBooking.user_id && getAvailableServicesForClient(newBooking.user_id).map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {newBooking.user_id && getAvailableServicesForClient(newBooking.user_id).length === 0 && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        This client hasn't purchased any services yet
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <Label>Date & Time</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newBooking.scheduled_at}
-                    onChange={(e) => setNewBooking({...newBooking, scheduled_at: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Notes</Label>
-                  <Textarea
-                    value={newBooking.notes}
-                    onChange={(e) => setNewBooking({...newBooking, notes: e.target.value})}
-                    placeholder="Session notes or special instructions"
-                  />
-                </div>
-                <Button 
-                  onClick={scheduleBooking}
-                  disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Schedule Session
-                </Button>
-              </CardContent>
-            </Card>
+          <Card className="bg-gradient-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Schedule New Session
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
 
-            <Card className="bg-gradient-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5" />
-                  All Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {bookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground">
-                            {booking.profiles?.full_name || 'Unknown Client'}
-                          </h3>
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {booking.service.title} • {formatDate(booking.scheduled_at)}
-                        </p>
-                        {booking.notes && (
-                          <p className="text-sm text-muted-foreground mt-1">Notes: {booking.notes}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {booking.service.includes_meet && !booking.meet_link && (
-                          <Button
-                            size="sm"
-                            onClick={() => createGoogleMeet(booking.id)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Video className="h-4 w-4 mr-1" />
-                            Create Meet
-                          </Button>
-                        )}
-                        {booking.meet_link && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => window.open(booking.meet_link, '_blank')}
-                          >
-                            <Video className="h-4 w-4 mr-1" />
-                            Join Meet
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              {/* state + effect */}
+              {/*
+                put this near the top of your component body:
+                const [availableServices, setAvailableServices] = useState([]);
+                useEffect(() => {
+                  const fetchClientServices = async () => {
+                    if (!newBooking.user_id) {
+                      setAvailableServices([]);
+                      return;
+                    }
+                    const { data, error } = await supabase
+                      .from('purchases')
+                      .select(`
+                        id,
+                        service_id,
+                        services ( id, title )
+                      `)
+                      .eq('user_id', newBooking.user_id)
+                      .eq('payment_status', 'completed');
+                    if (error) {
+                      console.error('Error fetching services for client:', error);
+                      setAvailableServices([]);
+                    } else {
+                      const mapped = data
+                        .filter(p => p.services)
+                        .map(p => ({ id: p.services.id, title: p.services.title }));
+                      setAvailableServices(mapped);
+                    }
+                  };
+                  fetchClientServices();
+                }, [newBooking.user_id]);
+              */}
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Client</Label>
+                  <Select 
+                    value={newBooking.user_id} 
+                    onValueChange={(value) => {
+                      setNewBooking({ ...newBooking, user_id: value, service_id: '' });
+                      setSelectedClient(clients.find(c => c.user_id === value) || null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.user_id} value={client.user_id}>
+                          {client.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+
+                <div>
+                  <Label>Service</Label>
+                  <Select 
+                    value={newBooking.service_id} 
+                    onValueChange={(value) => setNewBooking({ ...newBooking, service_id: value })}
+                    disabled={!newBooking.user_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableServices.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {newBooking.user_id && availableServices.length === 0 && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      This client hasn’t purchased any services yet
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <Label>Date & Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={newBooking.scheduled_at}
+                  onChange={(e) => setNewBooking({ ...newBooking, scheduled_at: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Notes</Label>
+                <Textarea
+                  value={newBooking.notes}
+                  onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                  placeholder="Session notes or special instructions"
+                />
+              </div>
+
+              <Button 
+                onClick={scheduleBooking}
+                disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule Session
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                All Sessions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {bookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground">
+                          {booking.profiles?.full_name || 'Unknown Client'}
+                        </h3>
+                        <Badge className={getStatusColor(booking.status)}>
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {booking.service.title} • {formatDate(booking.scheduled_at)}
+                      </p>
+                      {booking.notes && (
+                        <p className="text-sm text-muted-foreground mt-1">Notes: {booking.notes}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {booking.service.includes_meet && !booking.meet_link && (
+                        <Button
+                          size="sm"
+                          onClick={() => createGoogleMeet(booking.id)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Video className="h-4 w-4 mr-1" />
+                          Create Meet
+                        </Button>
+                      )}
+                      {booking.meet_link && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(booking.meet_link, '_blank')}
+                        >
+                          <Video className="h-4 w-4 mr-1" />
+                          Join Meet
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
           <TabsContent value="services" className="space-y-6">
             <Card className="bg-gradient-card border-border">
