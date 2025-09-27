@@ -27,7 +27,7 @@ interface Purchase {
   id: string;
   user_id: string;
   service_id: string;
-  service: Service;
+  services: Service;
   profiles: Profile;
 }
 
@@ -61,42 +61,64 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
 
   const loadClientsAndPurchases = async () => {
     try {
-      // Load all purchases with client and service information
+      // Get purchases with joined profiles + services
       const { data: purchasesData, error } = await supabase
         .from('purchases')
         .select(`
-          *,
-          services(*)
+          id,
+          user_id,
+          service_id,
+          payment_status,
+          profiles:user_id (
+            user_id,
+            full_name,
+            email
+          ),
+          services:service_id (
+            id,
+            title,
+            type,
+            duration_minutes,
+            includes_meet
+          )
         `)
         .eq('payment_status', 'completed');
 
       if (error) throw error;
 
-      // Load profiles separately
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('*');
-
-      // Combine the data
-      const enrichedPurchases = (purchasesData || []).map(purchase => ({
-        ...purchase,
-        service: purchase.services,
-        profiles: profilesData?.find(p => p.user_id === purchase.user_id)
-      }));
+      // Map purchases into clean objects, filtering out invalid joins
+      const enrichedPurchases: Purchase[] = (purchasesData || [])
+        .filter(
+          (p) =>
+            p.profiles !== null &&
+            typeof p.profiles === "object" &&
+            p.profiles !== null &&
+            p.profiles !== null && !("error" in (p.profiles as object)) &&
+            "user_id" in (p.profiles as object) &&
+            "full_name" in (p.profiles as object) &&
+            "email" in (p.profiles as object) &&
+            p.services &&
+            typeof p.services === "object" &&
+            "id" in p.services
+        )
+        .map((p) => ({
+          ...p,
+          services: p.services as Service,
+          profiles: p.profiles !== null && typeof p.profiles === "object" && !(p.profiles && "error" in p.profiles)
+            ? (p.profiles as Profile)
+            : undefined,
+        }));
 
       setPurchases(enrichedPurchases);
 
-      // Get unique clients who have made purchases
+      // Unique clients
       const uniqueClients = Array.from(
         new Map(
-          enrichedPurchases.map(purchase => [
-            purchase.user_id,
-            purchase.profiles
-          ])
+          enrichedPurchases.map(p => [p.user_id, p.profiles])
         ).values()
-      ).filter(client => client); // Filter out null/undefined clients
+      ).filter(client => client);
 
-      setClients(uniqueClients);
+      setClients(uniqueClients as Profile[]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -108,17 +130,17 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
   };
 
   const loadClientServices = (clientId: string) => {
-    // Get services that the selected client has purchased
+    // Services the client has purchased
     const clientPurchases = purchases.filter(p => p.user_id === clientId);
-    const clientServices = clientPurchases.map(p => p.service);
-    
-    // Remove duplicates based on service ID
+    const clientServices = clientPurchases.map(p => p.services);
+
+    // Deduplicate services by ID
     const uniqueServices = Array.from(
       new Map(clientServices.map(service => [service.id, service])).values()
     );
 
     setAvailableServices(uniqueServices);
-    setSelectedService(''); // Reset service selection when client changes
+    setSelectedService('');
   };
 
   const createBooking = async () => {
@@ -134,7 +156,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
     setLoading(true);
 
     try {
-      // Find the purchase record to get the purchase_id
+      // Find the purchase record for this client/service
       const clientPurchase = purchases.find(
         p => p.user_id === selectedClient && p.service_id === selectedService
       );
@@ -181,10 +203,10 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
     setLoading(false);
   };
 
-  const formatDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
+  const getLocalDateTime = (date = new Date()) => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+    return localDate.toISOString().slice(0, 16);
   };
 
   return (
@@ -257,7 +279,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
             type="datetime-local"
             value={scheduledAt}
             onChange={(e) => setScheduledAt(e.target.value)}
-            min={formatDateTime()}
+            min={getLocalDateTime()}
           />
         </div>
 
