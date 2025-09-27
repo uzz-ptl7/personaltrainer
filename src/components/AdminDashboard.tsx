@@ -28,8 +28,10 @@ import {
   DollarSign,
   LogOut,
   Video,
-  X
+  X,
+  Download
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
 import BookingManager from "./BookingManager";
 
@@ -116,6 +118,14 @@ interface VideoTestimonial {
   profiles?: Profile;
 }
 
+interface NewsletterSubscriber {
+  id: string;
+  name: string;
+  email: string;
+  subscribed_at: string;
+  is_active: boolean;
+}
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [clients, setClients] = useState<Profile[]>([]);
@@ -124,6 +134,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [services, setServices] = useState<Service[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [videoTestimonials, setVideoTestimonials] = useState<VideoTestimonial[]>([]);
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
   const [newBooking, setNewBooking] = useState({
@@ -147,9 +158,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [editingService, setEditingService] = useState<string | null>(null);
   const [editServiceData, setEditServiceData] = useState<any>({});
 
+  // Get available services for selected client
+  const getAvailableServicesForClient = (clientId: string) => {
+    const clientPurchases = purchases.filter(p => 
+      p.user_id === clientId && 
+      p.payment_status === 'completed'
+    );
+    
+    return services.filter(service => 
+      clientPurchases.some(purchase => purchase.service_id === service.id)
+    );
+  };
+
   useEffect(() => {
     loadData();
-    setupRealtimeSubscriptions();
+    const cleanup = setupRealtimeSubscriptions();
+    return cleanup;
   }, []);
 
   const loadData = async () => {
@@ -190,6 +214,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Load newsletter subscribers
+      const { data: subscribersData } = await supabase
+        .from('newsletter_subscribers')
+        .select('*')
+        .order('subscribed_at', { ascending: false });
+
       // Manually join data
       const enrichedPurchases = (purchasesData || []).map(purchase => ({
         ...purchase,
@@ -214,6 +244,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       setServices(servicesData || []);
       setNotifications(notificationsData || []);
       setVideoTestimonials(enrichedTestimonials);
+      setNewsletterSubscribers(subscribersData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -262,12 +293,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       )
       .subscribe();
 
+    const subscribersChannel = supabase
+      .channel('admin-newsletter-subscribers')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'newsletter_subscribers' },
+        () => loadData()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(purchasesChannel);
       supabase.removeChannel(bookingsChannel);
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(testimonialsChannel);
+      supabase.removeChannel(subscribersChannel);
     };
   };
 
@@ -603,6 +643,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
+  const exportNewsletterSubscribers = () => {
+    const dataForExport = newsletterSubscribers.map(subscriber => ({
+      Name: subscriber.name,
+      Email: subscriber.email,
+      'Subscribed Date': new Date(subscriber.subscribed_at).toLocaleDateString(),
+      Status: subscriber.is_active ? 'Active' : 'Inactive'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Newsletter Subscribers');
+    
+    const fileName = `newsletter_subscribers_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({
+      title: "Success",
+      description: `Exported ${dataForExport.length} subscribers to Excel`,
+    });
+  };
+
   const formatCurrency = (amount: number) => {
     return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
   };
@@ -669,12 +730,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-fit">
+          <TabsList className="grid grid-cols-6 w-fit">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="clients">Clients</TabsTrigger>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+            <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -717,13 +779,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </CardContent>
               </Card>
 
-              <Card>
+                  <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
                     <Video className="h-8 w-8 text-primary" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Testimonials</p>
                       <p className="text-2xl font-bold text-foreground">{approvedTestimonials.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Mail className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Newsletter Subscribers</p>
+                      <p className="text-2xl font-bold text-foreground">{newsletterSubscribers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Users className="h-8 w-8 text-primary" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Online Clients</p>
+                      <p className="text-2xl font-bold text-foreground">{clients.filter(c => c.is_online).length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -892,7 +980,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label>Client</Label>
-                    <Select value={newBooking.user_id} onValueChange={(value) => setNewBooking({...newBooking, user_id: value})}>
+                    <Select 
+                      value={newBooking.user_id} 
+                      onValueChange={(value) => {
+                        setNewBooking({...newBooking, user_id: value, service_id: ''});
+                        setSelectedClient(clients.find(c => c.user_id === value) || null);
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select client" />
                       </SelectTrigger>
@@ -907,18 +1001,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   </div>
                   <div>
                     <Label>Service</Label>
-                    <Select value={newBooking.service_id} onValueChange={(value) => setNewBooking({...newBooking, service_id: value})}>
+                    <Select 
+                      value={newBooking.service_id} 
+                      onValueChange={(value) => setNewBooking({...newBooking, service_id: value})}
+                      disabled={!newBooking.user_id}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select service" />
                       </SelectTrigger>
                       <SelectContent>
-                        {services.filter(s => s.is_active).map((service) => (
+                        {newBooking.user_id && getAvailableServicesForClient(newBooking.user_id).map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.title}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {newBooking.user_id && getAvailableServicesForClient(newBooking.user_id).length === 0 && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This client hasn't purchased any services yet
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -937,7 +1040,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     placeholder="Session notes or special instructions"
                   />
                 </div>
-                <Button onClick={scheduleBooking}>
+                <Button 
+                  onClick={scheduleBooking}
+                  disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Schedule Session
                 </Button>
@@ -1257,55 +1363,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             )}
           </TabsContent>
 
-          <TabsContent value="testimonials" className="space-y-6">
+          <TabsContent value="newsletter" className="space-y-6">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Video Testimonials Management
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    Newsletter Subscribers ({newsletterSubscribers.length})
+                  </div>
+                  <Button 
+                    onClick={exportNewsletterSubscribers}
+                    className="bg-gradient-primary hover:shadow-primary"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export to Excel
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Pending Approval */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-2">Pending Approval ({pendingTestimonials.length})</h4>
-                    {pendingTestimonials.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">No testimonials pending approval</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {pendingTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium">{testimonial.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                onClick={() => approveTestimonial(testimonial.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => rejectTestimonial(testimonial.id)}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
+                  {newsletterSubscribers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No newsletter subscribers yet</p>
+                  ) : (
+                    <div className="grid gap-4">
+                      {newsletterSubscribers.map((subscriber) => (
+                        <div key={subscriber.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
+                          <div className="flex-1">
+                            <div className="font-medium text-foreground">{subscriber.name}</div>
+                            <div className="text-sm text-muted-foreground">{subscriber.email}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Subscribed: {new Date(subscriber.subscribed_at).toLocaleDateString()}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                          <Badge variant={subscriber.is_active ? "default" : "secondary"}>
+                            {subscriber.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1368,7 +1464,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-black">
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
                             <div className="flex-1">
                               <div className="font-medium">{testimonial.title}</div>
                               <div className="text-sm text-muted-foreground">
@@ -1396,6 +1492,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       </div>
                     )}
                   </div>
+
                 </div>
               </CardContent>
             </Card>

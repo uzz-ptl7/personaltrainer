@@ -386,7 +386,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                   <div>
                     <p className="text-sm text-muted-foreground">Phone</p>
                     <p className="font-medium text-foreground">
-                      {profile?.phone_country_code} {profile?.phone || 'Not provided'}
+                      {profile?.phone ? `${profile?.phone_country_code} ${profile?.phone}` : 'Not provided'}
                     </p>
                   </div>
                   <div>
