@@ -88,7 +88,7 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
+    return `$${new Intl.NumberFormat('en-US').format(amount)}`;
   };
 
   return (

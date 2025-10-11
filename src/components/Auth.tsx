@@ -47,7 +47,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -58,10 +58,38 @@ const Auth = ({ onAuthChange }: AuthProps) => {
           title: "Sign In Failed",
           description: error.message,
         });
-      } else {
+      } else if (data.user) {
+        // Check if user is blocked
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_blocked, full_name')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to verify account status.",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
+        if (profile?.is_blocked) {
+          toast({
+            variant: "destructive",
+            title: "Account Blocked",
+            description: "Your account has been blocked. Please contact support for assistance.",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
         toast({
           title: "Welcome back!",
-          description: "You have successfully signed in.",
+          description: `You have successfully signed in${profile?.full_name ? `, ${profile.full_name}` : ''}.`,
         });
         // Redirect to dashboard after successful sign-in
         window.location.href = '/dashboard';

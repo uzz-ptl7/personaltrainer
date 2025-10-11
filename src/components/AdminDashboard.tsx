@@ -341,6 +341,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       // Manually join data
       const enrichedPurchases = (purchasesData || []).map(purchase => ({
         ...purchase,
+        purchased_at: purchase.purchased_at ?? '',
         service: servicesData?.find(s => s.id === purchase.service_id) || { title: 'Unknown Service', type: 'unknown' },
         profiles: clientsData?.find(c => c.user_id === purchase.user_id) || null
       }));
@@ -356,13 +357,135 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         profiles: clientsData?.find(c => c.user_id === testimonial.user_id) || null
       }));
 
-      setClients(clientsData || []);
-      setPurchases(enrichedPurchases);
-      setBookings(enrichedBookings);
-      setServices(servicesData || []);
-      setNotifications(notificationsData || []);
-      setVideoTestimonials(enrichedTestimonials);
-      setNewsletterSubscribers(subscribersData || []);
+      setClients(
+        (clientsData || []).map((c) => ({
+          ...c,
+          full_name: c.full_name ?? '',
+          email: c.email ?? '',
+          phone: c.phone ?? '',
+          phone_country_code: c.phone_country_code ?? '',
+          country: c.country ?? '',
+          is_blocked: c.is_blocked ?? false,
+          is_online: c.is_online ?? false,
+          last_seen: c.last_seen ?? '',
+          created_at: c.created_at ?? '',
+        }))
+      );
+      setPurchases(
+        enrichedPurchases.map((purchase) => ({
+          ...purchase,
+          purchased_at: purchase.purchased_at ?? '',
+          profiles: purchase.profiles
+            ? {
+                ...purchase.profiles,
+                full_name: purchase.profiles.full_name ?? '',
+                email: purchase.profiles.email ?? '',
+                phone: purchase.profiles.phone ?? '',
+                phone_country_code: purchase.profiles.phone_country_code ?? '',
+                country: purchase.profiles.country ?? '',
+                last_seen: purchase.profiles.last_seen ?? '',
+                created_at: purchase.profiles.created_at ?? '',
+                is_blocked: purchase.profiles.is_blocked ?? false,
+                is_online: purchase.profiles.is_online ?? false,
+              }
+            : undefined,
+          service: {
+            ...purchase.service,
+            title: purchase.service?.title ?? 'Unknown Service',
+            type: purchase.service?.type ?? 'unknown',
+          },
+          amount: Number(purchase.amount),
+          payment_status: purchase.payment_status ?? 'pending',
+          user_id: purchase.user_id,
+          id: purchase.id,
+          service_id: purchase.service_id,
+        }))
+      );
+      setBookings(
+        enrichedBookings.map((booking) => ({
+          ...booking,
+          notes: booking.notes ?? '',
+          scheduled_at: booking.scheduled_at ?? '',
+          status: booking.status ?? 'scheduled',
+          meet_link: booking.meet_link ?? '',
+          profiles: booking.profiles
+            ? {
+                ...booking.profiles,
+                full_name: booking.profiles.full_name ?? '',
+                email: booking.profiles.email ?? '',
+                phone: booking.profiles.phone ?? '',
+                phone_country_code: booking.profiles.phone_country_code ?? '',
+                country: booking.profiles.country ?? '',
+                last_seen: booking.profiles.last_seen ?? '',
+                created_at: booking.profiles.created_at ?? '',
+                is_blocked: booking.profiles.is_blocked ?? false,
+                is_online: booking.profiles.is_online ?? false,
+              }
+            : undefined,
+          service: {
+            ...booking.service,
+            title: booking.service?.title ?? 'Unknown Service',
+            type: booking.service?.type ?? 'unknown',
+            includes_meet: booking.service?.includes_meet ?? false,
+          },
+          user_id: booking.user_id,
+          id: booking.id,
+          service_id: booking.service_id,
+        }))
+      );
+      setServices(
+        (servicesData || []).map((service) => ({
+          ...service,
+          title: service.title ?? '',
+          description: service.description ?? '',
+          type: service.type ?? 'session',
+          price: Number(service.price ?? 0),
+          duration_weeks: Number(service.duration_weeks ?? 0),
+          duration_minutes: Number(service.duration_minutes ?? 0),
+          includes_nutrition: service.includes_nutrition ?? false,
+          includes_workout: service.includes_workout ?? false,
+          includes_meet: service.includes_meet ?? false,
+          is_active: service.is_active ?? true,
+          id: service.id,
+        }))
+      );
+      setNotifications(
+        (notificationsData || []).map((notification) => ({
+          ...notification,
+          is_read: notification.is_read ?? false,
+          created_at: notification.created_at ?? '',
+        }))
+      );
+        setVideoTestimonials(
+        enrichedTestimonials.map((testimonial) => ({
+          ...testimonial,
+          description: testimonial.description ?? '',
+          is_approved: testimonial.is_approved ?? false,
+          is_featured: testimonial.is_featured ?? false,
+          created_at: testimonial.created_at ?? '',
+          profiles: testimonial.profiles
+            ? {
+                ...testimonial.profiles,
+                full_name: testimonial.profiles.full_name ?? '',
+                email: testimonial.profiles.email ?? '',
+                phone: testimonial.profiles.phone ?? '',
+                phone_country_code: testimonial.profiles.phone_country_code ?? '',
+                country: testimonial.profiles.country ?? '',
+                last_seen: testimonial.profiles.last_seen ?? '',
+                created_at: testimonial.profiles.created_at ?? '',
+                is_blocked: testimonial.profiles.is_blocked ?? false,
+                is_online: testimonial.profiles.is_online ?? false,
+              }
+            : undefined,
+        }))
+      );
+      setNewsletterSubscribers(
+        (subscribersData || []).map((subscriber) => ({
+          ...subscriber,
+          subscribed_at: subscriber.subscribed_at ?? '',
+          is_active: subscriber.is_active ?? false,
+        }))
+      );
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -513,7 +636,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const createGoogleMeet = async (bookingId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('create-google-meet', {
-        body: { booking_id: bookingId }
+        body: { bookingId: bookingId }
       });
 
       if (error) throw error;
@@ -525,6 +648,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
       loadData();
     } catch (error) {
+      console.error('Error creating Google Meet:', error);
       toast({
         title: "Error",
         description: "Failed to create Google Meet link",
@@ -783,7 +907,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
+    return `$${new Intl.NumberFormat('en-US').format(amount)}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -1441,7 +1565,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <Label>Price (RWF)</Label>
+                    <Label>Price (USD)</Label>
                     <Input
                       type="number"
                       value={newService.price}
@@ -1603,7 +1727,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     </div>
                     <div className="grid md:grid-cols-3 gap-4">
                       <div>
-                        <Label>Price (RWF)</Label>
+                        <Label>Price (USD)</Label>
                         <Input
                           type="number"
                           value={editServiceData.price || 0}
@@ -1768,7 +1892,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-black">
                             <div className="flex-1">
                               <div className="font-medium">{testimonial.title}</div>
                               <div className="text-sm text-muted-foreground">

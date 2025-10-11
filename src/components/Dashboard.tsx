@@ -88,7 +88,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
 
       if (purchasesError) throw purchasesError;
 
-      setPurchases(purchasesData || []);
+      setPurchases(
+        (purchasesData || []).map((purchase: any) => ({
+          ...purchase,
+          service: {
+            ...purchase.service,
+            description: purchase.service.description ?? "",
+          },
+        }))
+      );
 
       // Load bookings
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -105,7 +113,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
 
       if (bookingsError) throw bookingsError;
 
-      setBookings(bookingsData || []);
+      setBookings(
+        (bookingsData || []).map((booking: any) => ({
+          ...booking,
+          duration_minutes: booking.duration_minutes ?? 0,
+        }))
+      );
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -166,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `RWF ${new Intl.NumberFormat('rw-RW').format(amount)}`;
+    return `$${new Intl.NumberFormat('en-US').format(amount)}`;
   };
   
   const handleContactSupport = () => {

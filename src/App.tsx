@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Auth from "./components/Auth";
 import Dashboard from "./components/Dashboard";
@@ -16,18 +17,57 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const checkUserBlockStatus = async (currentUser: User | null) => {
+    if (!currentUser) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking user block status:', error);
+        setUser(currentUser); // If we can't check, allow the user to proceed
+        return;
+      }
+
+      if (profile?.is_blocked) {
+        // User is blocked, sign them out
+        await supabase.auth.signOut();
+        setUser(null);
+        toast({
+          variant: "destructive",
+          title: "Account Blocked",
+          description: "Your account has been blocked. Please contact support for assistance.",
+        });
+        return;
+      }
+
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Error in checkUserBlockStatus:', error);
+      setUser(currentUser); // If we can't check, allow the user to proceed
+    }
+  };
 
   useEffect(() => {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      checkUserBlockStatus(session?.user ?? null);
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user ?? null);
+        checkUserBlockStatus(session?.user ?? null);
         setLoading(false);
       }
     );
