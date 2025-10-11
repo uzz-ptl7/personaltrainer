@@ -107,9 +107,9 @@ const Testimonials = () => {
         {/* Statistics */}
         <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { number: "500+", label: "Clients Transformed" },
+            { number: "50+", label: "Clients Transformed" },
             { number: "98%", label: "Success Rate" },
-            { number: "8+", label: "Years Experience" },
+            { number: "5+", label: "Years Experience" },
             { number: "24/7", label: "Support Available" }
           ].map((stat, index) => (
             <div key={index} className="space-y-2">

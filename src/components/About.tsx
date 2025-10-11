@@ -4,8 +4,8 @@ import trainerPhoto from "@/assets/trainer-photo.jpg";
 const About = () => {
   const achievements = [
     { icon: Award, text: "Certified Personal Trainer (NASM)" },
-    { icon: Users, text: "500+ Clients Transformed" },
-    { icon: Clock, text: "8+ Years Experience" },
+    { icon: Users, text: "50+ Clients Transformed" },
+    { icon: Clock, text: "5+ Years Experience" },
     { icon: CheckCircle, text: "Nutrition Specialist" },
   ];
 
@@ -43,7 +43,7 @@ const About = () => {
               
               <div className="space-y-4 font-body text-lg text-muted-foreground">
                 <p>
-                  Hi, I'm Salim Saleh, a certified personal trainer with over 8 years 
+                  Hi, I'm Salim Saleh, a certified personal trainer with over 5 years 
                   of experience helping people transform their lives through fitness. 
                   My passion for health and wellness started during my own fitness journey, 
                   and now I'm dedicated to helping others achieve their goals.

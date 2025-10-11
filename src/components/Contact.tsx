@@ -220,7 +220,7 @@ const Contact = () => {
             </h4>
             <div className="rounded-lg h-[500px] overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15949.65624441434!2d30.058611!3d-1.9705786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca4258ed8e797%3A0xf32b36a5411d0bc8!2sKigali%2C%20Rwanda!5e0!3m2!1sen!2sus!4v1672345678901!5m2!1sen!2sus"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15496.1991416278!2d30.09962686282022!3d-1.924401955716943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca1fdc77f41cb%3A0x395674b2bd7266ff!2sSalim%20Saleh%20Fitness!5e0!3m2!1sen!2srw!4v1760197863603!5m2!1sen!2srw"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
