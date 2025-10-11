@@ -31,7 +31,8 @@ import {
   X,
   Download,
   ShoppingBag,
-  Menu
+  Menu,
+  Home
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
@@ -635,23 +636,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
   const createGoogleMeet = async (bookingId: string) => {
     try {
+      console.log('Scheduling Google Meet session for booking:', bookingId);
+      
       const { data, error } = await supabase.functions.invoke('create-google-meet', {
         body: { bookingId: bookingId }
       });
 
-      if (error) throw error;
+      console.log('Google Meet scheduling response:', { data, error });
 
-      toast({
-        title: "Success",
-        description: "Google Meet link created successfully",
-      });
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      // Handle successful response
+      if (data?.success) {
+        toast({
+          title: "Session Scheduled",
+          description: "Google Meet session scheduled. Client can join 15 minutes before session time.",
+        });
+
+        console.log('Session Details:', {
+          meetLink: data.meetLink,
+          scheduledAt: data.scheduledAt,
+          accessWindow: `${data.accessWindowStart} to ${data.accessWindowEnd}`,
+          isCurrentlyActive: data.isCurrentlyActive
+        });
+      } else {
+        toast({
+          title: "Success", 
+          description: "Meeting session scheduled successfully",
+        });
+      }
 
       loadData();
     } catch (error) {
-      console.error('Error creating Google Meet:', error);
+      console.error('Error scheduling Google Meet session:', error);
+      
+      let errorMessage = "Failed to schedule Google Meet session.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Function not found')) {
+          errorMessage = "Google Meet function not deployed. Please deploy the Edge Function.";
+        } else if (error.message.includes('Authentication required')) {
+          errorMessage = "Authentication error. Please log in again.";
+        } else if (error.message.includes('Booking not found')) {
+          errorMessage = "Booking not found. Please refresh and try again.";
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create Google Meet link",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -726,26 +769,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   };
 
   const deleteService = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('services')
-        .update({ is_active: false })
-        .eq('id', serviceId);
+    if (!confirm('Are you sure you want to delete this service? This will also delete all related purchases and bookings.')) {
+      return;
+    }
 
+    try {
+      // Delete related data first due to foreign key constraints
+      await supabase.from('bookings').delete().eq('service_id', serviceId);
+      await supabase.from('purchases').delete().eq('service_id', serviceId);
+      
+      // Delete the service
+      const { error } = await supabase.from('services').delete().eq('id', serviceId);
+      
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Service deactivated successfully",
+        description: "Service and all related data deleted successfully",
       });
 
       loadData();
     } catch (error) {
+      console.error('Error deleting service:', error);
       toast({
         title: "Error",
-        description: "Failed to deactivate service",
+        description: "Failed to delete service",
         variant: "destructive",
       });
     }
@@ -906,6 +954,91 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     });
   };
 
+  // Delete functions
+  const deleteClient = async (clientId: string) => {
+    if (!confirm('Are you sure you want to delete this client? This will also delete all their purchases and bookings.')) {
+      return;
+    }
+
+    try {
+      // Delete related data first due to foreign key constraints
+      await supabase.from('bookings').delete().eq('user_id', clientId);
+      await supabase.from('purchases').delete().eq('user_id', clientId);
+      await supabase.from('video_testimonials').delete().eq('user_id', clientId);
+      
+      // Delete the profile
+      const { error } = await supabase.from('profiles').delete().eq('user_id', clientId);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client and all related data deleted successfully",
+      });
+      
+      loadData();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete client",
+      });
+    }
+  };
+
+  const deletePurchase = async (purchaseId: string) => {
+    if (!confirm('Are you sure you want to delete this purchase?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('purchases').delete().eq('id', purchaseId);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Purchase deleted successfully",
+      });
+      
+      loadData();
+    } catch (error) {
+      console.error('Error deleting purchase:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete purchase",
+      });
+    }
+  };
+
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to delete this booking?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Booking deleted successfully",
+      });
+      
+      loadData();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete booking",
+      });
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return `$${new Intl.NumberFormat('en-US').format(amount)}`;
   };
@@ -1013,7 +1146,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         </div>
         
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border flex-shrink-0">
+        <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
+          <Button
+            onClick={() => window.location.href = '/'}
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+          >
+            <Home className="h-5 w-5 mr-3" />
+            Home
+          </Button>
           <Button
             onClick={onSignOut}
             variant="ghost"
@@ -1047,15 +1188,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               </div>
             </div>
             
-            {/* Desktop Sign Out Button */}
-            <Button
-              onClick={onSignOut}
-              variant="outline"
-              className="hidden lg:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
+            {/* Desktop Navigation Buttons */}
+            <div className="hidden lg:flex items-center space-x-3">
+              <Button
+                onClick={() => window.location.href = '/'}
+                variant="outline"
+                className="border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Home
+              </Button>
+              <Button
+                onClick={onSignOut}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1302,6 +1453,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             </>
                           )}
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteClient(client.user_id)}
+                          title="Delete client and all related data"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1370,6 +1529,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                               <SelectItem value="refunded">Refunded</SelectItem>
                             </SelectContent>
                           </Select>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deletePurchase(purchase.id)}
+                            title="Delete purchase"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))
@@ -1502,7 +1669,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             className="bg-blue-600 hover:bg-blue-700"
                           >
                             <Video className="h-4 w-4 mr-1" />
-                            Create Meet
+                            Create Google Meet
                           </Button>
                         )}
                         {booking.meet_link && (
@@ -1515,6 +1682,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             Join Meet
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteBooking(booking.id)}
+                          title="Delete booking"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1655,6 +1830,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             className="w-full sm:w-auto lg:w-auto whitespace-nowrap"
                           >
                             {service.is_active ? "Deactivate" : "Activate"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteService(service.id)}
+                            className="w-full sm:w-auto lg:w-auto whitespace-nowrap"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
                           </Button>
                         </div>
                         

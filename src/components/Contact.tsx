@@ -225,9 +225,8 @@ const Contact = () => {
                 height="100%"
                 style={{ border: 0 }}
                 allowFullScreen
-                loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Kigali Location"
+                title="Salim Saleh Location"
               ></iframe>
             </div>
           </div>
