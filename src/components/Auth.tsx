@@ -91,8 +91,28 @@ const Auth = ({ onAuthChange }: AuthProps) => {
           title: "Welcome back!",
           description: `You have successfully signed in${profile?.full_name ? `, ${profile.full_name}` : ''}.`,
         });
-        // Redirect to dashboard after successful sign-in
-        window.location.href = '/dashboard';
+        
+        // Check if user has completed fitness assessment
+        try {
+          const { data: assessmentData, error } = await supabase
+            .from('fitness_assessments')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .single();
+          
+          if (assessmentData && !error) {
+            // User has completed assessment, redirect to dashboard
+            window.location.href = '/dashboard';
+          } else {
+            // No assessment found or error occurred, redirect to fitness assessment
+            console.log('Assessment check result:', { assessmentData, error });
+            window.location.href = '/fitness-assessment';
+          }
+        } catch (error) {
+          // If table doesn't exist yet or other error, redirect to fitness assessment for new users
+          console.log('Assessment check exception:', error);
+          window.location.href = '/fitness-assessment';
+        }
       }
     } catch (error) {
       toast({
@@ -145,7 +165,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
       } else {
         toast({
           title: "Account Created!",
-          description: "Please check your email to verify your account.",
+          description: "Please check your email to verify your account. After verification, you'll be redirected to complete your fitness assessment.",
         });
       }
     } catch (error) {

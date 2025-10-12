@@ -1,4 +1,4 @@
--- Create profiles table for user information
+-- Base schema migration - create all initial tables
 CREATE TABLE public.profiles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -95,6 +95,35 @@ CREATE TABLE public.newsletter_subscribers (
   is_active BOOLEAN DEFAULT TRUE
 );
 
+-- Create fitness_assessments table
+CREATE TABLE public.fitness_assessments (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  weight_kg DECIMAL(5,2) NOT NULL,
+  bmi DECIMAL(4,2) NOT NULL,
+  body_fat_percentage DECIMAL(4,2) NOT NULL,
+  heart_rate_bpm INTEGER NOT NULL,
+  muscle_mass_kg DECIMAL(5,2) NOT NULL,
+  bmr_kcal INTEGER NOT NULL,
+  water_percentage DECIMAL(4,2) NOT NULL,
+  body_fat_mass_kg DECIMAL(5,2) NOT NULL,
+  lean_body_mass_kg DECIMAL(5,2) NOT NULL,
+  bone_mass_kg DECIMAL(4,2) NOT NULL,
+  visceral_fat INTEGER NOT NULL,
+  protein_percentage DECIMAL(4,2) NOT NULL,
+  skeletal_muscle_mass_kg DECIMAL(5,2) NOT NULL,
+  subcutaneous_fat_percentage DECIMAL(4,2) NOT NULL,
+  body_age INTEGER NOT NULL,
+  body_type TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Add has_completed_assessment column to profiles table
+ALTER TABLE public.profiles 
+ADD COLUMN has_completed_assessment BOOLEAN DEFAULT FALSE;
+
 -- Enable Row Level Security on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
@@ -103,6 +132,7 @@ ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.video_testimonials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fitness_assessments ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies for profiles
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
@@ -159,6 +189,31 @@ CREATE POLICY "Admins can manage newsletter subscribers" ON public.newsletter_su
   EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND is_admin = true)
 );
 
+-- Create RLS policies for fitness_assessments
+CREATE POLICY "Users can view their own fitness assessment" 
+ON public.fitness_assessments FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own fitness assessment" 
+ON public.fitness_assessments FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own fitness assessment" 
+ON public.fitness_assessments FOR UPDATE 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all fitness assessments" 
+ON public.fitness_assessments FOR SELECT 
+USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND is_admin = true)
+);
+
+CREATE POLICY "Admins can manage all fitness assessments" 
+ON public.fitness_assessments FOR ALL 
+USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE user_id = auth.uid() AND is_admin = true)
+);
+
 -- Create function to handle new user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -171,7 +226,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Create trigger for new user signup
 CREATE TRIGGER on_auth_user_created
@@ -185,21 +240,37 @@ BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
+
+-- Create function to update profile when assessment is completed
+CREATE OR REPLACE FUNCTION public.update_assessment_status()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.profiles 
+  SET has_completed_assessment = TRUE 
+  WHERE user_id = NEW.user_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Create triggers for updated_at
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_services_updated_at BEFORE UPDATE ON public.services FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON public.bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TRIGGER update_video_testimonials_updated_at BEFORE UPDATE ON public.video_testimonials FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE TRIGGER update_fitness_assessments_updated_at BEFORE UPDATE ON public.fitness_assessments FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- Insert sample services
+-- Create trigger to automatically update assessment status
+CREATE TRIGGER on_fitness_assessment_completed
+  AFTER INSERT ON public.fitness_assessments
+  FOR EACH ROW EXECUTE FUNCTION public.update_assessment_status();
+
+-- Insert sample services (without fitness assessment as it's now free and mandatory)
 INSERT INTO public.services (title, description, type, price, duration_weeks, duration_minutes, includes_nutrition, includes_workout, includes_meet) VALUES
 ('Personal Training Session', '1-on-1 personal training session with certified trainer', 'session', 50000, 0, 60, false, true, true),
 ('Nutrition Consultation', 'Personalized nutrition plan and dietary consultation', 'consultation', 30000, 0, 45, true, false, true),
 ('12-Week Transformation Program', 'Complete body transformation program with nutrition and workout plan', 'program', 500000, 12, 0, true, true, true),
-('6-Week Strength Program', 'Focused strength building program', 'program', 300000, 6, 0, false, true, false),
-('Fitness Assessment', 'Complete fitness evaluation and goal setting session', 'consultation', 25000, 0, 60, false, false, true);
+('6-Week Strength Program', 'Focused strength building program', 'program', 300000, 6, 0, false, true, false);
 
 -- Create indexes for better performance
 CREATE INDEX idx_profiles_user_id ON public.profiles(user_id);
@@ -215,3 +286,32 @@ CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX idx_notifications_is_read ON public.notifications(is_read);
 CREATE INDEX idx_video_testimonials_is_approved ON public.video_testimonials(is_approved);
 CREATE INDEX idx_newsletter_email ON public.newsletter_subscribers(email);
+CREATE INDEX idx_fitness_assessments_user_id ON public.fitness_assessments(user_id);
+
+-- Create storage bucket for video testimonials
+INSERT INTO storage.buckets (id, name, public) VALUES ('video-testimonials', 'video-testimonials', true);
+
+-- Create RLS policies for video testimonials storage
+CREATE POLICY "Anyone can view video testimonials" ON storage.objects
+FOR SELECT USING (bucket_id = 'video-testimonials');
+
+CREATE POLICY "Authenticated users can upload video testimonials" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'video-testimonials' AND 
+  auth.uid() IS NOT NULL AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can update their own video testimonials" ON storage.objects
+FOR UPDATE USING (
+  bucket_id = 'video-testimonials' AND 
+  auth.uid() IS NOT NULL AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can delete their own video testimonials" ON storage.objects
+FOR DELETE USING (
+  bucket_id = 'video-testimonials' AND 
+  auth.uid() IS NOT NULL AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);

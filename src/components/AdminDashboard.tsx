@@ -32,7 +32,8 @@ import {
   Download,
   ShoppingBag,
   Menu,
-  Home
+  Home,
+  Activity
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
@@ -129,6 +130,30 @@ interface NewsletterSubscriber {
   is_active: boolean;
 }
 
+interface FitnessAssessment {
+  id: string;
+  user_id: string;
+  weight_kg: number;
+  bmi: number;
+  body_fat_percentage: number;
+  heart_rate_bpm: number;
+  muscle_mass_kg: number;
+  bmr_kcal: number;
+  water_percentage: number;
+  body_fat_mass_kg: number;
+  lean_body_mass_kg: number;
+  bone_mass_kg: number;
+  visceral_fat: number;
+  protein_percentage: number;
+  skeletal_muscle_mass_kg: number;
+  subcutaneous_fat_percentage: number;
+  body_age: number;
+  body_type: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile;
+}
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [clients, setClients] = useState<Profile[]>([]);
@@ -138,6 +163,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [videoTestimonials, setVideoTestimonials] = useState<VideoTestimonial[]>([]);
   const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [fitnessAssessments, setFitnessAssessments] = useState<FitnessAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
   const [newBooking, setNewBooking] = useState({
@@ -339,6 +365,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .select('*')
         .order('subscribed_at', { ascending: false });
 
+      // Load fitness assessments
+      let fitnessAssessmentsData: any[] = [];
+      try {
+        const { data: assessmentsData } = await supabase
+          .from('fitness_assessments')
+          .select('*')
+          .order('created_at', { ascending: false });
+        fitnessAssessmentsData = assessmentsData || [];
+      } catch (error) {
+        console.log('Fitness assessments table not available yet');
+      }
+
       // Manually join data
       const enrichedPurchases = (purchasesData || []).map(purchase => ({
         ...purchase,
@@ -356,6 +394,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       const enrichedTestimonials = (testimonialsData || []).map(testimonial => ({
         ...testimonial,
         profiles: clientsData?.find(c => c.user_id === testimonial.user_id) || null
+      }));
+
+      const enrichedAssessments = (fitnessAssessmentsData || []).map(assessment => ({
+        ...assessment,
+        profiles: clientsData?.find(c => c.user_id === assessment.user_id) || null
       }));
 
       setClients(
@@ -487,6 +530,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           is_active: subscriber.is_active ?? false,
         }))
       );
+      setFitnessAssessments(
+        enrichedAssessments.map((assessment) => ({
+          ...assessment,
+          weight_kg: Number(assessment.weight_kg ?? 0),
+          bmi: Number(assessment.bmi ?? 0),
+          body_fat_percentage: Number(assessment.body_fat_percentage ?? 0),
+          heart_rate_bpm: Number(assessment.heart_rate_bpm ?? 0),
+          muscle_mass_kg: Number(assessment.muscle_mass_kg ?? 0),
+          bmr_kcal: Number(assessment.bmr_kcal ?? 0),
+          water_percentage: Number(assessment.water_percentage ?? 0),
+          body_fat_mass_kg: Number(assessment.body_fat_mass_kg ?? 0),
+          lean_body_mass_kg: Number(assessment.lean_body_mass_kg ?? 0),
+          bone_mass_kg: Number(assessment.bone_mass_kg ?? 0),
+          visceral_fat: Number(assessment.visceral_fat ?? 0),
+          protein_percentage: Number(assessment.protein_percentage ?? 0),
+          skeletal_muscle_mass_kg: Number(assessment.skeletal_muscle_mass_kg ?? 0),
+          subcutaneous_fat_percentage: Number(assessment.subcutaneous_fat_percentage ?? 0),
+          body_age: Number(assessment.body_age ?? 0),
+          body_type: assessment.body_type ?? '',
+          created_at: assessment.created_at ?? '',
+          updated_at: assessment.updated_at ?? '',
+          profiles: assessment.profiles
+            ? {
+                ...assessment.profiles,
+                full_name: assessment.profiles.full_name ?? '',
+                email: assessment.profiles.email ?? '',
+                phone: assessment.profiles.phone ?? '',
+                phone_country_code: assessment.profiles.phone_country_code ?? '',
+                country: assessment.profiles.country ?? '',
+                last_seen: assessment.profiles.last_seen ?? '',
+                created_at: assessment.profiles.created_at ?? '',
+                is_blocked: assessment.profiles.is_blocked ?? false,
+                is_online: assessment.profiles.is_online ?? false,
+              }
+            : undefined,
+        }))
+      );
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -543,6 +623,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       )
       .subscribe();
 
+    const assessmentsChannel = supabase
+      .channel('admin-fitness-assessments')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'fitness_assessments' },
+        () => loadData()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(purchasesChannel);
@@ -550,6 +638,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(testimonialsChannel);
       supabase.removeChannel(subscribersChannel);
+      supabase.removeChannel(assessmentsChannel);
     };
   };
 
@@ -1120,6 +1209,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
               { id: 'sessions', label: 'Sessions', icon: CalendarIcon },
               { id: 'services', label: 'Services', icon: DollarSign },
+              { id: 'assessments', label: 'Fitness Assessments', icon: Activity },
               { id: 'testimonials', label: 'Testimonials', icon: Video },
               { id: 'newsletter', label: 'Newsletter', icon: Mail },
             ].map((tab) => {
@@ -1216,12 +1306,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 w-full overflow-hidden">
           {/* Desktop Tabs */}
           <div className="hidden lg:block w-full overflow-x-auto">
-            <TabsList className="grid grid-cols-7 w-fit">
+            <TabsList className="grid grid-cols-8 w-fit">
               <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
               <TabsTrigger value="sessions" className="whitespace-nowrap">Sessions</TabsTrigger>
               <TabsTrigger value="services" className="whitespace-nowrap">Services</TabsTrigger>
+              <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
               <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
               <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
             </TabsList>
@@ -2011,6 +2102,116 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             {subscriber.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="assessments" className="space-y-6 w-full overflow-x-hidden">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Fitness Assessments ({fitnessAssessments.length})
+                </CardTitle>
+                <CardDescription>
+                  View all client fitness assessment data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {fitnessAssessments.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No fitness assessments completed yet.
+                    </p>
+                  ) : (
+                    <div className="grid gap-6">
+                      {fitnessAssessments.map((assessment) => (
+                        <Card key={assessment.id} className="bg-card border-border">
+                          <CardHeader>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div>
+                                <CardTitle className="text-lg">
+                                  {assessment.profiles?.full_name || 'Unknown Client'}
+                                </CardTitle>
+                                <CardDescription>
+                                  {assessment.profiles?.email} • Completed: {formatDate(assessment.created_at)}
+                                </CardDescription>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {assessment.body_type}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {assessment.body_age} years old
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Weight</p>
+                                <p className="text-lg font-semibold">{assessment.weight_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">BMI</p>
+                                <p className="text-lg font-semibold">{assessment.bmi}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Body Fat</p>
+                                <p className="text-lg font-semibold">{assessment.body_fat_percentage}%</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Heart Rate</p>
+                                <p className="text-lg font-semibold">{assessment.heart_rate_bpm} bpm</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Muscle Mass</p>
+                                <p className="text-lg font-semibold">{assessment.muscle_mass_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">BMR</p>
+                                <p className="text-lg font-semibold">{assessment.bmr_kcal} kcal</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Water</p>
+                                <p className="text-lg font-semibold">{assessment.water_percentage}%</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Visceral Fat</p>
+                                <p className="text-lg font-semibold">{assessment.visceral_fat}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Body Fat Mass</p>
+                                <p className="text-lg font-semibold">{assessment.body_fat_mass_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Lean Body Mass</p>
+                                <p className="text-lg font-semibold">{assessment.lean_body_mass_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Bone Mass</p>
+                                <p className="text-lg font-semibold">{assessment.bone_mass_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Protein</p>
+                                <p className="text-lg font-semibold">{assessment.protein_percentage}%</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Skeletal Muscle</p>
+                                <p className="text-lg font-semibold">{assessment.skeletal_muscle_mass_kg} kg</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Subcutaneous Fat</p>
+                                <p className="text-lg font-semibold">{assessment.subcutaneous_fat_percentage}%</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   )}

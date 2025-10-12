@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import Auth from "./components/Auth";
 import Dashboard from "./components/Dashboard";
+import FitnessAssessment from "./components/FitnessAssessment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,16 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Index onAuthRequest={() => setUser(null)} />} />
         <Route path="/auth" element={<Auth onAuthChange={setUser} />} />
+        <Route path="/fitness-assessment" element={
+          user ? (
+            <FitnessAssessment 
+              user={user} 
+              onComplete={() => window.location.href = '/dashboard'} 
+            />
+          ) : (
+            <Auth onAuthChange={setUser} />
+          )
+        } />
         <Route path="/dashboard" element={
           user ? <Dashboard user={user} onSignOut={() => setUser(null)} /> : <Auth onAuthChange={setUser} />
         } />
