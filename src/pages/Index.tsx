@@ -4,6 +4,7 @@ import { User } from "@supabase/supabase-js";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
+import FitnessGallery from "@/components/FitnessGallery";
 import Services from "@/components/Services";
 import Testimonials from "@/components/Testimonials";
 import EmailMarketing from "@/components/EmailMarketing";
@@ -39,6 +40,7 @@ const Index = ({ onAuthRequest }: IndexProps) => {
       <main>
         <Hero />
         <About />
+        <FitnessGallery />
         <Services />
         <Testimonials />
         <EmailMarketing />
