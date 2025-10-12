@@ -34,11 +34,14 @@ import {
   Menu,
   Home,
   Activity,
-  Save
+  Save,
+  FileText
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
 import BookingManager from "./BookingManager";
+import ConsultationManager from "./ConsultationManager";
+import ServicePlanManager from "./ServicePlanManager";
 
 interface AdminDashboardProps {
   user: any;
@@ -190,7 +193,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     user_id: '',
     service_id: '',
     scheduled_at: '',
-    notes: ''
+    notes: '',
+    meet_link: ''
   });
   const [newService, setNewService] = useState({
     title: '',
@@ -725,6 +729,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           purchase_id: purchase.id,
           scheduled_at: newBooking.scheduled_at,
           notes: newBooking.notes,
+          meet_link: newBooking.meet_link || null,
           duration_minutes: services.find(s => s.id === newBooking.service_id)?.duration_minutes || 60
         });
 
@@ -745,78 +750,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         description: "Booking scheduled successfully",
       });
 
-      setNewBooking({ user_id: '', service_id: '', scheduled_at: '', notes: '' });
+      setNewBooking({ user_id: '', service_id: '', scheduled_at: '', notes: '', meet_link: '' });
       loadData();
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to schedule booking",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const createGoogleMeet = async (bookingId: string) => {
-    try {
-      console.log('Scheduling Google Meet session for booking:', bookingId);
-      
-      const { data, error } = await supabase.functions.invoke('create-google-meet', {
-        body: { bookingId: bookingId }
-      });
-
-      console.log('Google Meet scheduling response:', { data, error });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (data?.error) {
-        console.error('Function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      // Handle successful response
-      if (data?.success) {
-        toast({
-          title: "Session Scheduled",
-          description: "Google Meet session scheduled. Client can join 15 minutes before session time.",
-        });
-
-        console.log('Session Details:', {
-          meetLink: data.meetLink,
-          scheduledAt: data.scheduledAt,
-          accessWindow: `${data.accessWindowStart} to ${data.accessWindowEnd}`,
-          isCurrentlyActive: data.isCurrentlyActive
-        });
-      } else {
-        toast({
-          title: "Success", 
-          description: "Meeting session scheduled successfully",
-        });
-      }
-
-      loadData();
-    } catch (error) {
-      console.error('Error scheduling Google Meet session:', error);
-      
-      let errorMessage = "Failed to schedule Google Meet session.";
-      
-      if (error instanceof Error) {
-        if (error.message.includes('Function not found')) {
-          errorMessage = "Google Meet function not deployed. Please deploy the Edge Function.";
-        } else if (error.message.includes('Authentication required')) {
-          errorMessage = "Authentication error. Please log in again.";
-        } else if (error.message.includes('Booking not found')) {
-          errorMessage = "Booking not found. Please refresh and try again.";
-        } else {
-          errorMessage = `Error: ${error.message}`;
-        }
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -1308,6 +1247,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               { id: 'assessments', label: 'Fitness Assessments', icon: Activity },
               { id: 'testimonials', label: 'Testimonials', icon: Video },
               { id: 'newsletter', label: 'Newsletter', icon: Mail },
+              { id: 'consultations', label: 'Consultations', icon: Clock },
+              { id: 'dietplans', label: 'Diet Plans', icon: FileText },
             ].map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -1402,7 +1343,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 w-full overflow-hidden">
           {/* Desktop Tabs */}
           <div className="hidden lg:block w-full overflow-x-auto">
-            <TabsList className="grid grid-cols-8 w-fit">
+            <TabsList className="grid grid-cols-10 w-fit">
               <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
@@ -1411,6 +1352,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
               <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
               <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
+              <TabsTrigger value="consultations" className="whitespace-nowrap">Consultations</TabsTrigger>
+              <TabsTrigger value="dietplans" className="whitespace-nowrap">Service Plans</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1808,6 +1751,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
 
                 <div>
+                  <Label>Meeting Link <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="url"
+                    value={newBooking.meet_link}
+                    onChange={(e) => setNewBooking({ ...newBooking, meet_link: e.target.value })}
+                    placeholder="https://meet.google.com/... or https://zoom.us/..."
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Paste the Google Meet, Zoom, or other meeting link here. Client will use this to join the session.
+                  </p>
+                </div>
+
+                <div>
                   <Label>Notes</Label>
                   <Textarea
                     value={newBooking.notes}
@@ -1818,7 +1775,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
                 <Button 
                   onClick={scheduleBooking}
-                  disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at}
+                  disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at || !newBooking.meet_link}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Schedule Session
@@ -1854,16 +1811,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         )}
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-shrink-0">
-                        {booking.service.includes_meet && !booking.meet_link && (
-                          <Button
-                            size="sm"
-                            onClick={() => createGoogleMeet(booking.id)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Video className="h-4 w-4 mr-1" />
-                            Create Google Meet
-                          </Button>
-                        )}
                         {booking.meet_link && (
                           <Button
                             size="sm"
@@ -2067,7 +2014,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             {/* Service Edit Modal */}
             {editingService && (
               <Dialog open={true} onOpenChange={() => setEditingService(null)}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Edit Service</DialogTitle>
                   </DialogHeader>
@@ -2617,6 +2564,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="consultations" className="space-y-6 w-full overflow-x-hidden">
+            <ConsultationManager clients={clients} />
+          </TabsContent>
+
+          <TabsContent value="dietplans" className="space-y-6 w-full overflow-x-hidden">
+            <ServicePlanManager currentUserId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>

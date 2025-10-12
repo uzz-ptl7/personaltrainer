@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save } from "lucide-react";
+import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save, FileText, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -45,6 +45,34 @@ interface Booking {
   meet_link: string | null;
   status: string;
   notes: string | null;
+}
+
+interface ConsultationSession {
+  id: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  meet_link: string;
+  status: string;
+  notes: string | null;
+  consultation_type: string;
+}
+
+interface ServicePlan {
+  id: string;
+  user_id: string;
+  plan_type: string;
+  title: string;
+  description: string | null;
+  file_url: string;
+  file_name: string;
+  file_size: number | null;
+  created_at: string;
+  updated_at: string;
+  consultation_id: string | null;
+  purchase_id: string;
+  service_id: string;
+  uploaded_by: string;
+  is_active: boolean | null;
 }
 
 interface FitnessAssessment {
@@ -90,11 +118,54 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const getPlanTypeConfig = (planType: string) => {
+  const configs = {
+    diet: {
+      label: 'Diet Plan',
+      bgColor: 'from-emerald-500/10 to-green-500/10',
+      borderColor: 'border-emerald-500/20',
+      badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      iconColor: 'text-emerald-400'
+    },
+    workout: {
+      label: 'Workout Plan',
+      bgColor: 'from-orange-500/10 to-red-500/10',
+      borderColor: 'border-orange-500/20',
+      badgeColor: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+      iconColor: 'text-orange-400'
+    },
+    nutrition: {
+      label: 'Nutrition Plan',
+      bgColor: 'from-blue-500/10 to-cyan-500/10',
+      borderColor: 'border-blue-500/20',
+      badgeColor: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      iconColor: 'text-blue-400'
+    },
+    fitness: {
+      label: 'Fitness Plan',
+      bgColor: 'from-purple-500/10 to-pink-500/10',
+      borderColor: 'border-purple-500/20',
+      badgeColor: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+      iconColor: 'text-purple-400'
+    },
+    custom: {
+      label: 'Custom Plan',
+      bgColor: 'from-gray-500/10 to-slate-500/10',
+      borderColor: 'border-gray-500/20',
+      badgeColor: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+      iconColor: 'text-gray-400'
+    }
+  };
+  return configs[planType as keyof typeof configs] || configs.custom;
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [fitnessAssessment, setFitnessAssessment] = useState<FitnessAssessment | null>(null);
+  const [consultations, setConsultations] = useState<ConsultationSession[]>([]);
+  const [servicePlans, setServicePlans] = useState<ServicePlan[]>([]);
   const [isEditingAssessment, setIsEditingAssessment] = useState(false);
   const [editAssessmentData, setEditAssessmentData] = useState<Partial<FitnessAssessment>>({});
   const [loading, setLoading] = useState(true);
@@ -179,6 +250,28 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
       if (assessmentData) {
         setFitnessAssessment(assessmentData);
       }
+
+      // Load consultations
+      const { data: consultationsData, error: consultationsError } = await supabase
+        .from('consultations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('scheduled_at', { ascending: true });
+      if (consultationsError) throw consultationsError;
+      setConsultations((consultationsData || []).map((c: any) => ({
+        ...c,
+        meet_link: c.meet_link || '',
+        duration_minutes: c.duration_minutes ?? 30,
+      })));
+
+      // Load service plans for this user
+      const { data: servicePlansData, error: servicePlansError } = await supabase
+        .from('service_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (servicePlansError) throw servicePlansError;
+      setServicePlans(servicePlansData || []);
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -209,30 +302,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
-  const createMeetingForBooking = async (bookingId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create-google-meet', {
-        body: { bookingId }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Meeting Created",
-        description: "Google Meet link has been generated for your session.",
-      });
-
-      // Refresh bookings to get the updated meet link
-      loadUserData();
-    } catch (error) {
-      console.error('Error creating meeting:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create Google Meet link.",
-      });
-    }
-  };
+  // Removed createMeetingForBooking and meeting generation logic
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -342,10 +412,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               <div className="flex items-center gap-3">
                 <Activity className="h-5 w-5 text-orange-600" />
                 <div>
-                  <p className="text-sm font-medium text-orange-800">
+                  <p className="text-sm font-bold text-orange-800">
                     Complete your fitness assessment to unlock personalized recommendations
                   </p>
-                  <p className="text-xs text-orange-600">
+                  <p className="text-xs font-semibold text-orange-600">
                     Get customized workout plans and nutrition advice based on your body composition
                   </p>
                 </div>
@@ -380,9 +450,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="services" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="services">My Services</TabsTrigger>
             <TabsTrigger value="sessions">Upcoming Sessions</TabsTrigger>
+            <TabsTrigger value="dietplans">My Plans</TabsTrigger>
             <TabsTrigger value="assessment">Fitness Assessment</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
@@ -450,12 +521,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
             <div className="grid gap-6">
               <div>
                 <h2 className="text-xl font-semibold mb-4">Upcoming Sessions</h2>
-                {bookings.length === 0 ? (
+                {bookings.length === 0 && consultations.length === 0 ? (
                   <Card className="bg-gradient-card">
                     <CardContent className="py-8 text-center">
                       <p className="text-muted-foreground">No upcoming sessions scheduled.</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        Book a session to get started with your training!
+                        Book a session or wait for your trainer to schedule a consultation!
                       </p>
                     </CardContent>
                   </Card>
@@ -489,15 +560,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               Duration: {booking.duration_minutes} minutes
                             </p>
                           </div>
-                          
                           {booking.notes && (
                             <p className="text-sm text-muted-foreground mb-4">
                               Notes: {booking.notes}
                             </p>
                           )}
-                          
                           <div className="flex justify-between items-center">
-                            {booking.meet_link ? (
+                            {booking.meet_link && (
                               <Button 
                                 size="sm" 
                                 className="bg-gradient-primary"
@@ -506,20 +575,138 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                 <Video className="h-4 w-4 mr-2" />
                                 Join Meeting
                               </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => createMeetingForBooking(booking.id)}
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {consultations.map((consultation) => (
+                      <Card key={consultation.id} className="bg-gradient-card border-border">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">Consultation ({consultation.consultation_type.replace('_', ' ')})</CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  {formatDate(consultation.scheduled_at)}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge 
+                              variant={consultation.status === 'scheduled' ? 'default' : 'secondary'}
+                              className="capitalize"
+                            >
+                              {consultation.status}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Duration: {consultation.duration_minutes} minutes
+                            </p>
+                          </div>
+                          {consultation.notes && (
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Notes: {consultation.notes}
+                            </p>
+                          )}
+                          <div className="flex justify-between items-center">
+                            {consultation.meet_link && (
+                              <Button 
+                                size="sm" 
+                                className="bg-gradient-primary"
+                                onClick={() => window.open(consultation.meet_link, '_blank')}
                               >
                                 <Video className="h-4 w-4 mr-2" />
-                                Generate Meet Link
+                                Join Meeting
                               </Button>
                             )}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="dietplans" className="mt-8">
+            <div className="grid gap-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Your Personalized Plans</h2>
+                {servicePlans.length === 0 ? (
+                  <Card className="bg-gradient-card">
+                    <CardContent className="py-8 text-center">
+                      <FileText className="h-12 w-12 text-primary mx-auto mb-4 opacity-50" />
+                      <p className="text-muted-foreground">No personalized plans available yet.</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Your trainer will upload personalized plans here after your consultation and service purchase.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4">
+                    {servicePlans.map((plan) => {
+                      const config = getPlanTypeConfig(plan.plan_type);
+                      return (
+                        <Card key={plan.id} className={`bg-gradient-to-r ${config.bgColor} ${config.borderColor} shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm`}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <FileText className={`h-5 w-5 ${config.iconColor}`} />
+                                  {plan.title}
+                                </CardTitle>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground">
+                                    Uploaded: {new Date(plan.created_at || '').toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge className={config.badgeColor}>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                {config.label}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            {plan.description && (
+                              <p className="text-muted-foreground mb-4 bg-card/30 p-3 rounded-md border border-border/50 backdrop-blur-sm">
+                                {plan.description}
+                              </p>
+                            )}
+                            
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm mb-4">
+                              <span className="flex items-center gap-1">
+                                <FileText className="h-4 w-4" />
+                                {plan.file_name}
+                              </span>
+                              {plan.file_size && (
+                                <span>
+                                  Size: {(plan.file_size / (1024 * 1024)).toFixed(2)} MB
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <Button 
+                                size="sm" 
+                                className="bg-gradient-primary w-full"
+                                onClick={() => window.open(plan.file_url, '_blank')}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View {config.label}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </div>

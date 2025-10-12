@@ -43,6 +43,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
   const [selectedService, setSelectedService] = useState<string>('');
   const [scheduledAt, setScheduledAt] = useState('');
   const [notes, setNotes] = useState('');
+  const [meetLink, setMeetLink] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -170,10 +171,10 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
   };
 
   const createBooking = async () => {
-    if (!selectedClient || !selectedService || !scheduledAt) {
+    if (!selectedClient || !selectedService || !scheduledAt || !meetLink) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including the meeting link",
         variant: "destructive",
       });
       return;
@@ -199,6 +200,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
           purchase_id: clientPurchase.id,
           scheduled_at: scheduledAt,
           notes: notes || null,
+          meet_link: meetLink,
           status: 'scheduled'
         });
 
@@ -214,6 +216,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
       setSelectedService('');
       setScheduledAt('');
       setNotes('');
+      setMeetLink('');
       setAvailableServices([]);
       
       onBookingCreated();
@@ -240,7 +243,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          Create New Booking (BookingManager Component)
+          Create New Booking
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -310,6 +313,20 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
         </div>
 
         <div>
+          <Label>Meeting Link <span className="text-red-500">*</span></Label>
+          <Input
+            type="url"
+            value={meetLink}
+            onChange={(e) => setMeetLink(e.target.value)}
+            placeholder="https://meet.google.com/..."
+            required
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Paste the Google Meet or Zoom link here. Clients will use this to join the session.
+          </p>
+        </div>
+
+        <div>
           <Label>Notes (Optional)</Label>
           <Textarea
             value={notes}
@@ -321,7 +338,7 @@ const BookingManager = ({ onBookingCreated }: BookingManagerProps) => {
 
         <Button 
           onClick={createBooking} 
-          disabled={loading || !selectedClient || !selectedService || !scheduledAt}
+          disabled={loading || !selectedClient || !selectedService || !scheduledAt || !meetLink}
           className="w-full bg-gradient-primary"
         >
           {loading ? "Creating..." : "Create Booking"}
