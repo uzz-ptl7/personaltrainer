@@ -62,7 +62,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
         // Check if user is blocked
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('is_blocked, full_name')
+          .select('is_blocked, full_name, is_admin')
           .eq('user_id', data.user.id)
           .single();
 
@@ -92,6 +92,12 @@ const Auth = ({ onAuthChange }: AuthProps) => {
           description: `You have successfully signed in${profile?.full_name ? `, ${profile.full_name}` : ''}.`,
         });
         
+        // Admins skip fitness assessment and go directly to dashboard
+        if (profile?.is_admin) {
+          window.location.href = '/dashboard';
+          return;
+        }
+
         // Check if user has completed fitness assessment
         try {
           const { data: assessmentData, error } = await supabase

@@ -5,7 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle } from "lucide-react";
+import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ServicesStore from "./ServicesStore";
 import AdminDashboard from "./AdminDashboard";
 import logo from "@/assets/ssf-logo.jpg";
@@ -44,10 +47,56 @@ interface Booking {
   notes: string | null;
 }
 
+interface FitnessAssessment {
+  id: string;
+  user_id: string;
+  weight_kg: number;
+  bmi: number;
+  body_fat_percentage: number;
+  heart_rate_bpm: number;
+  muscle_mass_kg: number;
+  bmr_kcal: number;
+  water_percentage: number;
+  body_fat_mass_kg: number;
+  lean_body_mass_kg: number;
+  bone_mass_kg: number;
+  visceral_fat: number;
+  protein_percentage: number;
+  skeletal_muscle_mass_kg: number;
+  subcutaneous_fat_percentage: number;
+  body_age: number;
+  body_type: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+const bodyTypes = [
+  "Hidden Obese",
+  "Obese", 
+  "Solidly-built",
+  "Under exercised",
+  "Standard",
+  "Standard Muscular",
+  "Thin",
+  "Thin and Muscular",
+  "Very Muscular"
+];
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [fitnessAssessment, setFitnessAssessment] = useState<FitnessAssessment | null>(null);
+  const [isEditingAssessment, setIsEditingAssessment] = useState(false);
+  const [editAssessmentData, setEditAssessmentData] = useState<Partial<FitnessAssessment>>({});
   const [loading, setLoading] = useState(true);
   const [showServicesStore, setShowServicesStore] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -119,6 +168,17 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
           duration_minutes: booking.duration_minutes ?? 0,
         }))
       );
+
+      // Load fitness assessment
+      const { data: assessmentData } = await supabase
+        .from('fitness_assessments')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (assessmentData) {
+        setFitnessAssessment(assessmentData);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -190,6 +250,48 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
     window.open(`mailto:${adminEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
+  const handleEditAssessment = () => {
+    if (fitnessAssessment) {
+      setEditAssessmentData(fitnessAssessment);
+      setIsEditingAssessment(true);
+    }
+  };
+
+  const handleSaveAssessment = async () => {
+    try {
+      const { error } = await supabase
+        .from('fitness_assessments')
+        .update(editAssessmentData)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Assessment Updated",
+        description: "Your fitness assessment has been updated successfully.",
+      });
+
+      setFitnessAssessment({ ...fitnessAssessment!, ...editAssessmentData });
+      setIsEditingAssessment(false);
+      setEditAssessmentData({});
+    } catch (error) {
+      console.error('Error updating assessment:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update your fitness assessment.",
+      });
+    }
+  };
+
+  const bodyTypes = [
+    "Ectomorph",
+    "Mesomorph", 
+    "Endomorph",
+    "Ecto-Mesomorph",
+    "Meso-Endomorph"
+  ];
+
   if (isAdmin) {
     return <AdminDashboard user={user} onSignOut={handleSignOut} />;
   }
@@ -234,9 +336,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="services" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="services">My Services</TabsTrigger>
             <TabsTrigger value="sessions">Upcoming Sessions</TabsTrigger>
+            <TabsTrigger value="assessment">Fitness Assessment</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
@@ -379,7 +482,305 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
             </div>
           </TabsContent>
 
-            <TabsContent value="profile" className="space-y-6">
+          <TabsContent value="assessment" className="mt-8">
+            <div className="grid gap-6">
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Fitness Assessment</h2>
+                  {fitnessAssessment && !isEditingAssessment && (
+                    <Button onClick={handleEditAssessment} variant="outline">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Assessment
+                    </Button>
+                  )}
+                  {isEditingAssessment && (
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveAssessment} size="sm">
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setIsEditingAssessment(false);
+                          setEditAssessmentData({});
+                        }} 
+                        variant="outline" 
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {!fitnessAssessment ? (
+                  <Card className="bg-gradient-card">
+                    <CardContent className="py-8 text-center">
+                      <Activity className="h-12 w-12 text-primary mx-auto mb-4" />
+                      <p className="text-muted-foreground">No fitness assessment completed yet.</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Complete your fitness assessment to get personalized training recommendations.
+                      </p>
+                      <Button 
+                        onClick={() => window.location.href = '/fitness-assessment'}
+                        className="mt-4 bg-gradient-primary hover:shadow-primary"
+                      >
+                        <Activity className="h-4 w-4 mr-2" />
+                        Complete Assessment
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-gradient-card border-border">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Your Fitness Assessment
+                      </CardTitle>
+                      <CardDescription>
+                        Last updated: {fitnessAssessment.updated_at ? formatDate(fitnessAssessment.updated_at) : 'N/A'}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {/* Basic Metrics */}
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Weight (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.weight_kg || fitnessAssessment.weight_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, weight_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.weight_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">BMI</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.bmi || fitnessAssessment.bmi}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bmi: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.bmi}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Body Fat (%)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.body_fat_percentage || fitnessAssessment.body_fat_percentage}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_percentage: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.body_fat_percentage}%</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Heart Rate (BPM)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              value={editAssessmentData.heart_rate_bpm || fitnessAssessment.heart_rate_bpm}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, heart_rate_bpm: parseInt(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.heart_rate_bpm} bpm</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Muscle Mass (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.muscle_mass_kg || fitnessAssessment.muscle_mass_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.muscle_mass_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">BMR (KCAL)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              value={editAssessmentData.bmr_kcal || fitnessAssessment.bmr_kcal}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bmr_kcal: parseInt(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.bmr_kcal} kcal</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Water (%)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.water_percentage || fitnessAssessment.water_percentage}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, water_percentage: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.water_percentage}%</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Visceral Fat</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              value={editAssessmentData.visceral_fat || fitnessAssessment.visceral_fat}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, visceral_fat: parseInt(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.visceral_fat}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Body Fat Mass (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.body_fat_mass_kg || fitnessAssessment.body_fat_mass_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.body_fat_mass_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Lean Body Mass (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.lean_body_mass_kg || fitnessAssessment.lean_body_mass_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.lean_body_mass_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Bone Mass (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.bone_mass_kg || fitnessAssessment.bone_mass_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bone_mass_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.bone_mass_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Protein (%)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.protein_percentage || fitnessAssessment.protein_percentage}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, protein_percentage: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.protein_percentage}%</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Skeletal Muscle Mass (KG)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.skeletal_muscle_mass_kg || fitnessAssessment.skeletal_muscle_mass_kg}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.skeletal_muscle_mass_kg} kg</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Subcutaneous Fat (%)</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              step="0.1"
+                              value={editAssessmentData.subcutaneous_fat_percentage || fitnessAssessment.subcutaneous_fat_percentage}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.subcutaneous_fat_percentage}%</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Body Age</p>
+                          {isEditingAssessment ? (
+                            <Input
+                              type="number"
+                              value={editAssessmentData.body_age || fitnessAssessment.body_age}
+                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_age: parseInt(e.target.value)})}
+                            />
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.body_age} years</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">Body Type</p>
+                          {isEditingAssessment ? (
+                            <Select 
+                              value={editAssessmentData.body_type || fitnessAssessment.body_type} 
+                              onValueChange={(value) => setEditAssessmentData({...editAssessmentData, body_type: value})}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {bodyTypes.map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-lg font-semibold">{fitnessAssessment.body_type}</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-6">
               <Card className="bg-gradient-card border-border shadow-elevation">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-gradient-primary">

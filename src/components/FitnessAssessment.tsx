@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Activity, Scale, Heart, Zap } from "lucide-react";
+import { Activity, Scale, Heart, Zap, MessageCircle } from "lucide-react";
 
 interface FitnessAssessmentProps {
   user: User;
@@ -89,6 +89,13 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleNeedHelp = () => {
+    const whatsappMessage = "Hi! I need help completing my fitness assessment. Could we schedule a meeting to go through it together?";
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/250789842205?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const validateForm = () => {
@@ -457,6 +464,15 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                   disabled={loading}
                 >
                   {loading ? "Saving Assessment..." : "Complete Assessment"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleNeedHelp}
+                  className="flex-shrink-0"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Need Help?
                 </Button>
               </div>
             </form>

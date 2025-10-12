@@ -33,7 +33,8 @@ import {
   ShoppingBag,
   Menu,
   Home,
-  Activity
+  Activity,
+  Save
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import logo from "@/assets/ssf-logo.jpg";
@@ -154,6 +155,18 @@ interface FitnessAssessment {
   profiles?: Profile;
 }
 
+const bodyTypes = [
+  "Hidden Obese",
+  "Obese", 
+  "Solidly-built",
+  "Under exercised",
+  "Standard",
+  "Standard Muscular",
+  "Thin",
+  "Thin and Muscular",
+  "Very Muscular"
+];
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const { toast } = useToast();
   const [clients, setClients] = useState<Profile[]>([]);
@@ -188,6 +201,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [editServiceData, setEditServiceData] = useState<any>({});
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Assessment editing state
+  const [editingAssessment, setEditingAssessment] = useState<string | null>(null);
+  const [editAssessmentData, setEditAssessmentData] = useState<any>({});
 
   // State for available services for selected client
   const [availableServices, setAvailableServices] = useState<{ id: string; title: string }[]>([]);
@@ -1041,6 +1058,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       title: "Success",
       description: `Exported ${dataForExport.length} subscribers to Excel`,
     });
+  };
+
+  // Assessment management functions
+  const handleEditAssessment = (assessment: FitnessAssessment) => {
+    setEditingAssessment(assessment.id);
+    setEditAssessmentData(assessment);
+  };
+
+  const handleDeleteAssessment = async (assessmentId: string) => {
+    if (!confirm('Are you sure you want to delete this fitness assessment? The user will need to complete it again when they log in.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('fitness_assessments')
+        .delete()
+        .eq('id', assessmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Fitness assessment deleted successfully. User will need to complete assessment again.",
+      });
+      
+      loadData();
+    } catch (error) {
+      console.error('Error deleting assessment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete assessment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateAssessment = async () => {
+    if (!editingAssessment) return;
+    
+    try {
+      const { error } = await supabase
+        .from('fitness_assessments')
+        .update(editAssessmentData)
+        .eq('id', editingAssessment);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Assessment updated successfully",
+      });
+
+      setEditingAssessment(null);
+      setEditAssessmentData({});
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update assessment",
+        variant: "destructive",
+      });
+    }
   };
 
   // Delete functions
@@ -2148,6 +2228,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                                 <Badge variant="outline">
                                   {assessment.body_age} years old
                                 </Badge>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditAssessment(assessment)}
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteAssessment(assessment.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
                               </div>
                             </div>
                           </CardHeader>
@@ -2219,6 +2315,185 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Assessment Edit Modal */}
+          {editingAssessment && (
+            <Dialog open={true} onOpenChange={() => setEditingAssessment(null)}>
+              <DialogContent className="sm:max-w-4xl max-h-screen overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Fitness Assessment</DialogTitle>
+                  <DialogDescription>
+                    Update client fitness assessment data
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label>Weight (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.weight_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, weight_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>BMI</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.bmi || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bmi: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Body Fat (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.body_fat_percentage || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_percentage: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Heart Rate (BPM)</Label>
+                      <Input
+                        type="number"
+                        value={editAssessmentData.heart_rate_bpm || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, heart_rate_bpm: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Muscle Mass (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.muscle_mass_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>BMR (KCAL)</Label>
+                      <Input
+                        type="number"
+                        value={editAssessmentData.bmr_kcal || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bmr_kcal: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Water (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.water_percentage || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, water_percentage: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Visceral Fat</Label>
+                      <Input
+                        type="number"
+                        value={editAssessmentData.visceral_fat || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, visceral_fat: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Body Fat Mass (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.body_fat_mass_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Lean Body Mass (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.lean_body_mass_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Bone Mass (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.bone_mass_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bone_mass_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Protein (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.protein_percentage || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, protein_percentage: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Skeletal Muscle Mass (KG)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.skeletal_muscle_mass_kg || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Subcutaneous Fat (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={editAssessmentData.subcutaneous_fat_percentage || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Body Age</Label>
+                      <Input
+                        type="number"
+                        value={editAssessmentData.body_age || ''}
+                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_age: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Body Type</Label>
+                      <Select 
+                        value={editAssessmentData.body_type || ''} 
+                        onValueChange={(value) => setEditAssessmentData({...editAssessmentData, body_type: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bodyTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setEditingAssessment(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={updateAssessment}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
 
           <TabsContent value="testimonials" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
