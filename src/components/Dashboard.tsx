@@ -852,6 +852,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                     <p className="font-medium text-foreground">{profile?.country || 'Not provided'}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-muted-foreground">How you heard about us</p>
+                    <p className="font-medium text-foreground">{profile?.referral_source || 'Not provided'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-muted-foreground">Member since</p>
                     <p className="font-medium text-foreground">
                       {formatDate(user.created_at)}

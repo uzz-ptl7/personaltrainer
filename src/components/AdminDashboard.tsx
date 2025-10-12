@@ -52,6 +52,7 @@ interface Profile {
   phone: string;
   phone_country_code: string;
   country: string;
+  referral_source: string | null;
   is_blocked: boolean;
   is_online: boolean;
   last_seen: string;
@@ -432,6 +433,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           phone: c.phone ?? '',
           phone_country_code: c.phone_country_code ?? '',
           country: c.country ?? '',
+          referral_source: c.referral_source ?? '',
           is_blocked: c.is_blocked ?? false,
           is_online: c.is_online ?? false,
           last_seen: c.last_seen ?? '',
@@ -1595,6 +1597,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                           <p className="text-sm text-muted-foreground">
                             {client.phone_country_code} {client.phone} • {client.country}
                           </p>
+                          {client.referral_source && (
+                            <p className="text-xs text-muted-foreground">
+                              Heard about us: {client.referral_source}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">

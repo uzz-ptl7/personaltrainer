@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { CountrySelect } from "@/components/CountrySelect";
@@ -22,6 +23,8 @@ const Auth = ({ onAuthChange }: AuthProps) => {
   const [phone, setPhone] = useState('');
   const [phoneCountryCode, setPhoneCountryCode] = useState('+250');
   const [country, setCountry] = useState('');
+  const [referralSource, setReferralSource] = useState('');
+  const [customReferralSource, setCustomReferralSource] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -134,10 +137,19 @@ const Auth = ({ onAuthChange }: AuthProps) => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password || !fullName || !phone || !country) {
+    if (!email || !password || !fullName || !phone || !country || !referralSource) {
       toast({
         title: "Validation Error",
         description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (referralSource === 'other' && !customReferralSource.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please specify how you heard about us",
         variant: "destructive",
       });
       return;
@@ -147,6 +159,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
 
     try {
       const redirectUrl = `${window.location.origin}/`;
+      const finalReferralSource = referralSource === 'other' ? customReferralSource : referralSource;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -158,6 +171,7 @@ const Auth = ({ onAuthChange }: AuthProps) => {
             phone: phone,
             phone_country_code: phoneCountryCode,
             country: country,
+            referral_source: finalReferralSource,
           }
         }
       });
@@ -288,6 +302,41 @@ const Auth = ({ onAuthChange }: AuthProps) => {
                   onPhoneNumberChange={setPhone}
                   required
                 />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="referralSource">How did you hear about us?</Label>
+                  <Select value={referralSource} onValueChange={setReferralSource} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="social_media">Social Media (Instagram, Facebook, etc.)</SelectItem>
+                      <SelectItem value="google_search">Google Search</SelectItem>
+                      <SelectItem value="friend_family">Friend or Family Recommendation</SelectItem>
+                      <SelectItem value="gym_fitness_center">Gym or Fitness Center</SelectItem>
+                      <SelectItem value="online_ad">Online Advertisement</SelectItem>
+                      <SelectItem value="youtube">YouTube</SelectItem>
+                      <SelectItem value="fitness_app">Fitness App</SelectItem>
+                      <SelectItem value="health_professional">Health Professional</SelectItem>
+                      <SelectItem value="word_of_mouth">Word of Mouth</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {referralSource === 'other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="customReferralSource">Please specify</Label>
+                    <Input
+                      id="customReferralSource"
+                      type="text"
+                      placeholder="Tell us how you heard about us"
+                      value={customReferralSource}
+                      onChange={(e) => setCustomReferralSource(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
                 
                 <div className="space-y-2">
                   <Label htmlFor="signupEmail">Email</Label>
