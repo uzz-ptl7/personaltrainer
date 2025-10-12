@@ -334,7 +334,51 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      {/* Assessment Reminder Banner */}
+      {!fitnessAssessment && (
+        <div className="bg-gradient-to-r from-gray-400 to-gray-300 border-b-[5px] border-orange-700">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Activity className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium text-orange-800">
+                    Complete your fitness assessment to unlock personalized recommendations
+                  </p>
+                  <p className="text-xs text-orange-600">
+                    Get customized workout plans and nutrition advice based on your body composition
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => {
+                    const whatsappMessage = "Hi! I need help completing my fitness assessment. Could we schedule a meeting to go through it together?";
+                    const encodedMessage = encodeURIComponent(whatsappMessage);
+                    const whatsappUrl = `https://wa.me/250789842205?text=${encodedMessage}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-700"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Need Help?
+                </Button>
+                <Button 
+                  onClick={() => window.location.href = '/fitness-assessment'}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  Complete Now
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="services" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="services">My Services</TabsTrigger>
@@ -847,7 +891,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               </Card>
             </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 };

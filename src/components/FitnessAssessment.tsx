@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Activity, Scale, Heart, Zap, MessageCircle } from "lucide-react";
+import { Activity, Scale, Heart, Zap, MessageCircle, SkipForward } from "lucide-react";
 
 interface FitnessAssessmentProps {
   user: User;
@@ -96,6 +96,13 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
     const encodedMessage = encodeURIComponent(whatsappMessage);
     const whatsappUrl = `https://wa.me/250789842205?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleSkipForNow = () => {
+    if (confirm('Are you sure you want to skip the fitness assessment for now? You can complete it later from your dashboard.')) {
+      // Redirect to dashboard without saving assessment
+      window.location.href = '/dashboard';
+    }
   };
 
   const validateForm = () => {
@@ -457,7 +464,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-6">
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <Button
                   type="submit"
                   className="flex-1 bg-gradient-primary hover:shadow-primary"
@@ -465,15 +472,26 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                 >
                   {loading ? "Saving Assessment..." : "Complete Assessment"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleNeedHelp}
-                  className="flex-shrink-0"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Need Help?
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleNeedHelp}
+                    className="flex-shrink-0"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Need Help?
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleSkipForNow}
+                    className="flex-shrink-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <SkipForward className="h-4 w-4 mr-2" />
+                    Skip for Now
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>
