@@ -111,15 +111,21 @@ interface Notification {
   created_at: string;
 }
 
-interface VideoTestimonial {
+interface TextTestimonial {
   id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  video_url: string;
+  user_id: string | null;
+  name: string;
+  role: string;
+  company?: string;
+  content: string;
+  rating: number;
+  website?: string;
+  email: string;
+  phone: string;
   is_approved: boolean;
   is_featured: boolean;
   created_at: string;
+  updated_at: string;
   profiles?: Profile;
 }
 
@@ -174,7 +180,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [videoTestimonials, setVideoTestimonials] = useState<VideoTestimonial[]>([]);
+  const [textTestimonials, setTextTestimonials] = useState<TextTestimonial[]>([]);
   const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [fitnessAssessments, setFitnessAssessments] = useState<FitnessAssessment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -370,9 +376,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Load video testimonials separately
+      // Load text testimonials separately
       const { data: testimonialsData } = await supabase
-        .from('video_testimonials')
+        .from('text_testimonials')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -517,13 +523,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           created_at: notification.created_at ?? '',
         }))
       );
-        setVideoTestimonials(
+        setTextTestimonials(
         enrichedTestimonials.map((testimonial) => ({
           ...testimonial,
-          description: testimonial.description ?? '',
+          content: testimonial.content ?? '',
+          name: testimonial.name ?? '',
+          role: testimonial.role ?? '',
+          company: testimonial.company ?? '',
+          rating: Number(testimonial.rating ?? 5),
+          website: testimonial.website ?? '',
+          email: testimonial.email ?? '',
+          phone: testimonial.phone ?? '',
           is_approved: testimonial.is_approved ?? false,
           is_featured: testimonial.is_featured ?? false,
           created_at: testimonial.created_at ?? '',
+          updated_at: testimonial.updated_at ?? '',
           profiles: testimonial.profiles
             ? {
                 ...testimonial.profiles,
@@ -625,9 +639,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       .subscribe();
 
     const testimonialsChannel = supabase
-      .channel('admin-video-testimonials')
+      .channel('admin-text-testimonials')
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'video_testimonials' },
+        { event: '*', schema: 'public', table: 'text_testimonials' },
         () => loadData()
       )
       .subscribe();
@@ -946,7 +960,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const approveTestimonial = async (testimonialId: string) => {
     try {
       const { error } = await supabase
-        .from('video_testimonials')
+        .from('text_testimonials')
         .update({ is_approved: true })
         .eq('id', testimonialId);
 
@@ -970,7 +984,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const rejectTestimonial = async (testimonialId: string) => {
     try {
       const { error } = await supabase
-        .from('video_testimonials')
+        .from('text_testimonials')
         .delete()
         .eq('id', testimonialId);
 
@@ -994,7 +1008,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const toggleFeature = async (testimonialId: string, featured: boolean) => {
     try {
       const { error } = await supabase
-        .from('video_testimonials')
+        .from('text_testimonials')
         .update({ is_featured: featured })
         .eq('id', testimonialId);
 
@@ -1018,7 +1032,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const deleteTestimonial = async (testimonialId: string) => {
     try {
       const { error } = await supabase
-        .from('video_testimonials')
+        .from('text_testimonials')
         .delete()
         .eq('id', testimonialId);
 
@@ -1133,7 +1147,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       // Delete related data first due to foreign key constraints
       await supabase.from('bookings').delete().eq('user_id', clientId);
       await supabase.from('purchases').delete().eq('user_id', clientId);
-      await supabase.from('video_testimonials').delete().eq('user_id', clientId);
+      await supabase.from('text_testimonials').delete().eq('user_id', clientId);
       
       // Delete the profile
       const { error } = await supabase.from('profiles').delete().eq('user_id', clientId);
@@ -1235,8 +1249,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     new Date(booking.scheduled_at) > new Date() && booking.status !== 'cancelled'
   );
 
-  const pendingTestimonials = videoTestimonials.filter(t => !t.is_approved);
-  const approvedTestimonials = videoTestimonials.filter(t => t.is_approved);
+  const pendingTestimonials = textTestimonials.filter(t => !t.is_approved);
+  const approvedTestimonials = textTestimonials.filter(t => t.is_approved);
 
   if (loading) {
     return (
@@ -2499,8 +2513,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Video Testimonials Management
+                  <MessageCircle className="h-5 w-5" />
+                  Text Testimonials Management
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -2513,14 +2527,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {pendingTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div key={testimonial.id} className="flex items-start justify-between p-4 border rounded-lg">
                             <div className="flex-1">
-                              <div className="font-medium">{testimonial.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {testimonial.profiles?.full_name || 'Anonymous'} • {new Date(testimonial.created_at).toLocaleDateString()}
+                              <div className="font-medium">{testimonial.name}</div>
+                              <div className="text-sm text-muted-foreground mb-2">
+                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} • 
+                                Rating: {testimonial.rating}/5 • {new Date(testimonial.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
+                                "{testimonial.content}"
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Contact: {testimonial.email} • {testimonial.phone}
+                                {testimonial.website && ` • ${testimonial.website}`}
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 ml-4">
                               <Button 
                                 size="sm" 
                                 onClick={() => approveTestimonial(testimonial.id)}
@@ -2552,14 +2574,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-center justify-between p-3 border rounded-lg bg-black">
+                          <div key={testimonial.id} className="flex items-start justify-between p-4 border rounded-lg bg-card/50">
                             <div className="flex-1">
-                              <div className="font-medium">{testimonial.title}</div>
-                              <div className="text-sm text-muted-foreground">
-                                by {testimonial.profiles?.full_name || 'Anonymous'} • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
+                              <div className="font-medium">{testimonial.name}</div>
+                              <div className="text-sm text-muted-foreground mb-2">
+                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} • 
+                                Rating: {testimonial.rating}/5 • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
+                              </div>
+                              <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
+                                "{testimonial.content}"
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 ml-4">
                               <Button 
                                 size="sm" 
                                 variant="outline"

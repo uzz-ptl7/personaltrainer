@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Services from "@/components/Services";
-import VideoTestimonials from "@/components/VideoTestimonials";
+import Testimonials from "@/components/Testimonials";
 import EmailMarketing from "@/components/EmailMarketing";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -40,7 +40,7 @@ const Index = ({ onAuthRequest }: IndexProps) => {
         <Hero />
         <About />
         <Services />
-        <VideoTestimonials />
+        <Testimonials />
         <EmailMarketing />
         <Contact />
       </main>
