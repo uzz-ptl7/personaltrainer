@@ -29,8 +29,8 @@ const Header = ({ onAuthRequest, user }: HeaderProps) => {
   const navigationItems = [
     { label: "Home", href: "#home" },
     { label: "About Me", href: "#about" },
+    { label: "Gallery", href: "#gallery" },
     { label: "Services", href: "#services" },
-    { label: "Testimonials", href: "#testimonials" },
     { label: "Contact", href: "#contact" },
   ];
 
@@ -69,14 +69,14 @@ const Header = ({ onAuthRequest, user }: HeaderProps) => {
 
           {/* CTA Buttons (Desktop) */}
           <div className="hidden lg:flex gap-3">
-            <Button 
+            <Button
               onClick={() => scrollToSection('#contact')}
               className="bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth px-6"
             >
               Contact Me
             </Button>
             {user ? (
-              <Button 
+              <Button
                 onClick={() => window.location.href = '/dashboard'}
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -85,7 +85,7 @@ const Header = ({ onAuthRequest, user }: HeaderProps) => {
                 Dashboard
               </Button>
             ) : (
-              <Button 
+              <Button
                 onClick={() => window.location.href = '/auth'}
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -119,14 +119,14 @@ const Header = ({ onAuthRequest, user }: HeaderProps) => {
                 </button>
               ))}
               <div className="space-y-3 mt-4">
-                <Button 
+                <Button
                   onClick={() => scrollToSection('#contact')}
                   className="w-full bg-gradient-primary text-primary-foreground hover:shadow-primary transition-smooth"
                 >
                   Contact Me
                 </Button>
                 {user ? (
-                  <Button 
+                  <Button
                     onClick={() => window.location.href = '/dashboard'}
                     variant="outline"
                     className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -135,7 +135,7 @@ const Header = ({ onAuthRequest, user }: HeaderProps) => {
                     Dashboard
                   </Button>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={() => window.location.href = '/auth'}
                     variant="outline"
                     className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
