@@ -100,7 +100,7 @@ interface FitnessAssessment {
 
 const bodyTypes = [
   "Hidden Obese",
-  "Obese", 
+  "Obese",
   "Solidly-built",
   "Under exercised",
   "Standard",
@@ -185,16 +185,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
         .select('*')
         .eq('user_id', user.id)
         .single();
-      
+
       setProfile(profileData);
       setIsAdmin(profileData?.is_admin || false);
-      
+
       // Update user's online status
       await supabase
         .from('profiles')
-        .update({ 
-          is_online: true, 
-          last_seen: new Date().toISOString() 
+        .update({
+          is_online: true,
+          last_seen: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
@@ -288,12 +288,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
     // Update user's offline status
     await supabase
       .from('profiles')
-      .update({ 
-        is_online: false, 
-        last_seen: new Date().toISOString() 
+      .update({
+        is_online: false,
+        last_seen: new Date().toISOString()
       })
       .eq('user_id', user.id);
-      
+
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Error signing out:', error);
@@ -311,12 +311,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   const formatCurrency = (amount: number) => {
     return `$${new Intl.NumberFormat('en-US').format(amount)}`;
   };
-  
+
   const handleContactSupport = () => {
     const adminEmail = "salim@ssf.com";
     const subject = "Support Request";
     const body = `Hi Salim,\n\nI need assistance with:\n\n[Please describe your issue or question here]\n\nBest regards,\n${profile?.full_name || user.email}`;
-    
+
     window.open(`mailto:${adminEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
@@ -356,7 +356,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
 
   const bodyTypes = [
     "Ectomorph",
-    "Mesomorph", 
+    "Mesomorph",
     "Endomorph",
     "Ecto-Mesomorph",
     "Meso-Endomorph"
@@ -365,7 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   if (isAdmin) {
     return <AdminDashboard user={user} onSignOut={handleSignOut} />;
   }
-  
+
   if (showServicesStore) {
     return <ServicesStore user={user} onBack={() => setShowServicesStore(false)} />;
   }
@@ -421,11 +421,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button 
+                <Button
                   onClick={() => {
                     const whatsappMessage = "Hi! I need help completing my fitness assessment. Could we schedule a meeting to go through it together?";
                     const encodedMessage = encodeURIComponent(whatsappMessage);
-                    const whatsappUrl = `https://wa.me/250789842205?text=${encodedMessage}`;
+                    const whatsappUrl = `https://wa.me/250788624496?text=${encodedMessage}`;
                     window.open(whatsappUrl, '_blank');
                   }}
                   variant="outline"
@@ -435,7 +435,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Need Help?
                 </Button>
-                <Button 
+                <Button
                   onClick={() => window.location.href = '/fitness-assessment'}
                   size="sm"
                   className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -469,7 +469,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       <p className="text-sm text-muted-foreground mt-2">
                         Browse our programs and start your fitness journey today!
                       </p>
-                      <Button 
+                      <Button
                         onClick={() => setShowServicesStore(true)}
                         className="mt-4 bg-gradient-primary hover:shadow-primary"
                       >
@@ -478,40 +478,40 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       </Button>
                     </CardContent>
                   </Card>
-                 ) : (
-                   <div className="space-y-4">
-                     <div className="grid gap-4">
-                       {purchases.map((purchase) => (
-                         <Card key={purchase.id} className="bg-gradient-card border-border">
-                           <CardHeader>
-                             <div className="flex justify-between items-start">
-                               <div>
-                                 <CardTitle className="text-lg">{purchase.service.title}</CardTitle>
-                                 <CardDescription>{purchase.service.description}</CardDescription>
-                               </div>
-                               <Badge variant="secondary" className="capitalize">
-                                 {purchase.service.type}
-                               </Badge>
-                             </div>
-                           </CardHeader>
-                           <CardContent>
-...
-                           </CardContent>
-                         </Card>
-                       ))}
-                     </div>
-                     {/* Browse More Services Button */}
-                     <div className="text-center pt-4 border-t border-border">
-                       <Button 
-                         onClick={() => setShowServicesStore(true)}
-                         variant="outline"
-                         className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                       >
-                         <ShoppingBag className="h-4 w-4 mr-2" />
-                         Browse More Services
-                       </Button>
-                     </div>
-                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-4">
+                      {purchases.map((purchase) => (
+                        <Card key={purchase.id} className="bg-gradient-card border-border">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg">{purchase.service.title}</CardTitle>
+                                <CardDescription>{purchase.service.description}</CardDescription>
+                              </div>
+                              <Badge variant="secondary" className="capitalize">
+                                {purchase.service.type}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            ...
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Browse More Services Button */}
+                    <div className="text-center pt-4 border-t border-border">
+                      <Button
+                        onClick={() => setShowServicesStore(true)}
+                        variant="outline"
+                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        Browse More Services
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -545,7 +545,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                 </p>
                               </div>
                             </div>
-                            <Badge 
+                            <Badge
                               variant={booking.status === 'scheduled' ? 'default' : 'secondary'}
                               className="capitalize"
                             >
@@ -567,8 +567,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                           )}
                           <div className="flex justify-between items-center">
                             {booking.meet_link && (
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 className="bg-gradient-primary"
                                 onClick={() => window.open(booking.meet_link!, '_blank')}
                               >
@@ -593,7 +593,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                 </p>
                               </div>
                             </div>
-                            <Badge 
+                            <Badge
                               variant={consultation.status === 'scheduled' ? 'default' : 'secondary'}
                               className="capitalize"
                             >
@@ -615,8 +615,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                           )}
                           <div className="flex justify-between items-center">
                             {consultation.meet_link && (
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 className="bg-gradient-primary"
                                 onClick={() => window.open(consultation.meet_link, '_blank')}
                               >
@@ -680,7 +680,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                 {plan.description}
                               </p>
                             )}
-                            
+
                             <div className="flex items-center gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm mb-4">
                               <span className="flex items-center gap-1">
                                 <FileText className="h-4 w-4" />
@@ -692,10 +692,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                 </span>
                               )}
                             </div>
-                            
+
                             <div className="flex gap-3">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 className="bg-gradient-primary w-full"
                                 onClick={() => window.open(plan.file_url, '_blank')}
                               >
@@ -730,12 +730,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                         <Save className="h-4 w-4 mr-2" />
                         Save Changes
                       </Button>
-                      <Button 
+                      <Button
                         onClick={() => {
                           setIsEditingAssessment(false);
                           setEditAssessmentData({});
-                        }} 
-                        variant="outline" 
+                        }}
+                        variant="outline"
                         size="sm"
                       >
                         Cancel
@@ -743,7 +743,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                     </div>
                   )}
                 </div>
-                
+
                 {!fitnessAssessment ? (
                   <Card className="bg-gradient-card">
                     <CardContent className="py-8 text-center">
@@ -752,7 +752,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       <p className="text-sm text-muted-foreground mt-2">
                         Complete your fitness assessment to get personalized training recommendations.
                       </p>
-                      <Button 
+                      <Button
                         onClick={() => window.location.href = '/fitness-assessment'}
                         className="mt-4 bg-gradient-primary hover:shadow-primary"
                       >
@@ -782,13 +782,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.weight_kg || fitnessAssessment.weight_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, weight_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, weight_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.weight_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">BMI</p>
                           {isEditingAssessment ? (
@@ -796,13 +796,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.bmi || fitnessAssessment.bmi}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bmi: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bmi: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.bmi}</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Body Fat (%)</p>
                           {isEditingAssessment ? (
@@ -810,26 +810,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.body_fat_percentage || fitnessAssessment.body_fat_percentage}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_percentage: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_fat_percentage: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.body_fat_percentage}%</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Heart Rate (BPM)</p>
                           {isEditingAssessment ? (
                             <Input
                               type="number"
                               value={editAssessmentData.heart_rate_bpm || fitnessAssessment.heart_rate_bpm}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, heart_rate_bpm: parseInt(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, heart_rate_bpm: parseInt(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.heart_rate_bpm} bpm</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Muscle Mass (KG)</p>
                           {isEditingAssessment ? (
@@ -837,26 +837,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.muscle_mass_kg || fitnessAssessment.muscle_mass_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.muscle_mass_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">BMR (KCAL)</p>
                           {isEditingAssessment ? (
                             <Input
                               type="number"
                               value={editAssessmentData.bmr_kcal || fitnessAssessment.bmr_kcal}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bmr_kcal: parseInt(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bmr_kcal: parseInt(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.bmr_kcal} kcal</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Water (%)</p>
                           {isEditingAssessment ? (
@@ -864,26 +864,26 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.water_percentage || fitnessAssessment.water_percentage}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, water_percentage: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, water_percentage: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.water_percentage}%</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Visceral Fat</p>
                           {isEditingAssessment ? (
                             <Input
                               type="number"
                               value={editAssessmentData.visceral_fat || fitnessAssessment.visceral_fat}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, visceral_fat: parseInt(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, visceral_fat: parseInt(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.visceral_fat}</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Body Fat Mass (KG)</p>
                           {isEditingAssessment ? (
@@ -891,13 +891,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.body_fat_mass_kg || fitnessAssessment.body_fat_mass_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.body_fat_mass_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Lean Body Mass (KG)</p>
                           {isEditingAssessment ? (
@@ -905,13 +905,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.lean_body_mass_kg || fitnessAssessment.lean_body_mass_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.lean_body_mass_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Bone Mass (KG)</p>
                           {isEditingAssessment ? (
@@ -919,13 +919,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.bone_mass_kg || fitnessAssessment.bone_mass_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, bone_mass_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bone_mass_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.bone_mass_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Protein (%)</p>
                           {isEditingAssessment ? (
@@ -933,13 +933,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.protein_percentage || fitnessAssessment.protein_percentage}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, protein_percentage: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, protein_percentage: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.protein_percentage}%</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Skeletal Muscle Mass (KG)</p>
                           {isEditingAssessment ? (
@@ -947,13 +947,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.skeletal_muscle_mass_kg || fitnessAssessment.skeletal_muscle_mass_kg}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.skeletal_muscle_mass_kg} kg</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Subcutaneous Fat (%)</p>
                           {isEditingAssessment ? (
@@ -961,32 +961,32 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               type="number"
                               step="0.1"
                               value={editAssessmentData.subcutaneous_fat_percentage || fitnessAssessment.subcutaneous_fat_percentage}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.subcutaneous_fat_percentage}%</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Body Age</p>
                           {isEditingAssessment ? (
                             <Input
                               type="number"
                               value={editAssessmentData.body_age || fitnessAssessment.body_age}
-                              onChange={(e) => setEditAssessmentData({...editAssessmentData, body_age: parseInt(e.target.value)})}
+                              onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_age: parseInt(e.target.value) })}
                             />
                           ) : (
                             <p className="text-lg font-semibold">{fitnessAssessment.body_age} years</p>
                           )}
                         </div>
-                        
+
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Body Type</p>
                           {isEditingAssessment ? (
-                            <Select 
-                              value={editAssessmentData.body_type || fitnessAssessment.body_type} 
-                              onValueChange={(value) => setEditAssessmentData({...editAssessmentData, body_type: value})}
+                            <Select
+                              value={editAssessmentData.body_type || fitnessAssessment.body_type}
+                              onValueChange={(value) => setEditAssessmentData({ ...editAssessmentData, body_type: value })}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -1012,75 +1012,75 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
-              <Card className="bg-gradient-card border-border shadow-elevation">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gradient-primary">
-                    <UserIcon className="h-5 w-5" />
-                    Profile Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium text-foreground">{profile?.full_name || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium text-foreground">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium text-foreground">
-                      {profile?.phone ? `${profile?.phone_country_code} ${profile?.phone}` : 'Not provided'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Country</p>
-                    <p className="font-medium text-foreground">{profile?.country || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">How you heard about us</p>
-                    <p className="font-medium text-foreground">{profile?.referral_source || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Member since</p>
-                    <p className="font-medium text-foreground">
-                      {formatDate(user.created_at)}
-                    </p>
-                  </div>
-                  <div className="pt-4 space-y-2">
-                    <Button 
-                      onClick={handleContactSupport}
-                      variant="outline" 
-                      className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Contact Support
-                    </Button>
-                    {profile?.phone && (
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => window.open(`tel:${profile.phone_country_code}${profile.phone}`)}
-                          variant="outline" 
-                          className="flex-1"
-                        >
-                          <Phone className="h-4 w-4 mr-2" />
-                          Call
-                        </Button>
-                        <Button 
-                          onClick={() => window.open(`https://wa.me/${profile.phone_country_code.replace('+', '')}${profile.phone}`)}
-                          variant="outline" 
-                          className="flex-1"
-                        >
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          WhatsApp
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+            <Card className="bg-gradient-card border-border shadow-elevation">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gradient-primary">
+                  <UserIcon className="h-5 w-5" />
+                  Profile Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium text-foreground">{profile?.full_name || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium text-foreground">{user.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium text-foreground">
+                    {profile?.phone ? `${profile?.phone_country_code} ${profile?.phone}` : 'Not provided'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Country</p>
+                  <p className="font-medium text-foreground">{profile?.country || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">How you heard about us</p>
+                  <p className="font-medium text-foreground">{profile?.referral_source || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Member since</p>
+                  <p className="font-medium text-foreground">
+                    {formatDate(user.created_at)}
+                  </p>
+                </div>
+                <div className="pt-4 space-y-2">
+                  <Button
+                    onClick={handleContactSupport}
+                    variant="outline"
+                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Contact Support
+                  </Button>
+                  {profile?.phone && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => window.open(`tel:${profile.phone_country_code}${profile.phone}`)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call
+                      </Button>
+                      <Button
+                        onClick={() => window.open(`https://wa.me/${profile.phone_country_code.replace('+', '')}${profile.phone}`)}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>

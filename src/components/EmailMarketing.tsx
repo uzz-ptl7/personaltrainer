@@ -14,7 +14,7 @@ const EmailMarketing = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !name) {
       toast({
         title: "Error",
@@ -27,21 +27,29 @@ const EmailMarketing = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.functions.invoke('save-to-sheets', {
-        body: {
-          name,
-          email,
-          timestamp: new Date().toISOString()
-        }
-      });
+      const FORMSPREE_URL = (window as any).NEWSLETTER_FORMSPREE || "https://formspree.io/f/your-form-id";
 
-      if (error) throw error;
+      // Fire both: serverless function (Sheets) and Formspree (email)
+      await Promise.allSettled([
+        supabase.functions.invoke('save-to-sheets', {
+          body: {
+            name,
+            email,
+            timestamp: new Date().toISOString()
+          }
+        }),
+        fetch(FORMSPREE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        })
+      ]);
 
       toast({
         title: "Success!",
         description: "Thank you for subscribing to our newsletter!",
       });
-      
+
       setName("");
       setEmail("");
     } catch (error) {

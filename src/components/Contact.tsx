@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Mail, Phone, MapPin, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!formData.name || !formData.email || !formData.message) {
       toast({
@@ -35,27 +36,44 @@ const Contact = () => {
       return;
     }
 
-    // Simulate form submission
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for your interest! I'll get back to you within 24 hours.",
-    });
+    (async () => {
+      const FORMSPREE_URL = (window as any).CONTACT_FORMSPREE || "https://formspree.io/f/your-form-id";
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      message: ""
-    });
+      try {
+        await Promise.allSettled([
+          fetch(FORMSPREE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          }),
+          supabase.from("contacts" as any).insert([{ ...formData, created_at: new Date().toISOString() }])
+        ]);
+
+        toast({
+          title: "Message Sent!",
+          description: "Thank you for your interest! I'll get back to you within 24 hours.",
+        });
+
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          message: ""
+        });
+      } catch (err) {
+        console.error('Contact submit error', err);
+        toast({ title: 'Error', description: 'Failed to send message. Try again later.', variant: 'destructive' });
+      }
+    })();
   };
 
   const contactInfo = [
     {
       icon: Phone,
       label: "Phone",
-      value: "+250 789 654 321",
-      action: "tel:+250789654321"
+      value: "+250788624496",
+      action: "tel:+250788624496"
     },
     {
       icon: Mail,
@@ -67,7 +85,7 @@ const Contact = () => {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "Quick Response",
-      action: "https://wa.me/250789654321"
+      action: "https://wa.me/250788624496"
     },
     {
       icon: MapPin,
@@ -87,7 +105,7 @@ const Contact = () => {
             <span className="text-gradient-primary">Journey</span>
           </h2>
           <p className="font-body text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ready to transform your life? Let's discuss your goals and create a 
+            Ready to transform your life? Let's discuss your goals and create a
             personalized plan that works for you. Your free consultation is just one message away.
           </p>
         </div>
@@ -98,7 +116,7 @@ const Contact = () => {
             <h3 className="font-heading font-semibold text-2xl text-foreground mb-6">
               Book Your Free Consultation
             </h3>
-            
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -115,7 +133,7 @@ const Contact = () => {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Phone
@@ -179,8 +197,8 @@ const Contact = () => {
                 Get In Touch
               </h3>
               <p className="font-body text-muted-foreground mb-8">
-                I respond to all inquiries within 24 hours. Whether you have questions 
-                about my programs, want to schedule a consultation, or just need some 
+                I respond to all inquiries within 24 hours. Whether you have questions
+                about my programs, want to schedule a consultation, or just need some
                 quick advice, don't hesitate to reach out.
               </p>
             </div>
@@ -213,23 +231,23 @@ const Contact = () => {
           </div>
         </div>
 
-          {/* Map */}
-          <div className="bg-gradient-card rounded-xl p-4 mt-3 border border-border overflow-hidden">
-            <h4 className="font-heading font-semibold text-lg text-foreground mb-4">
-              Find Me in Kigali
-            </h4>
-            <div className="rounded-lg h-[500px] overflow-hidden">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15496.1991416278!2d30.09962686282022!3d-1.924401955716943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca1fdc77f41cb%3A0x395674b2bd7266ff!2sSalim%20Saleh%20Fitness!5e0!3m2!1sen!2srw!4v1760197863603!5m2!1sen!2srw"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Salim Saleh Location"
-              ></iframe>
-            </div>
+        {/* Map */}
+        <div className="bg-gradient-card rounded-xl p-4 mt-3 border border-border overflow-hidden">
+          <h4 className="font-heading font-semibold text-lg text-foreground mb-4">
+            Find Me in Kigali
+          </h4>
+          <div className="rounded-lg h-[500px] overflow-hidden">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15496.1991416278!2d30.09962686282022!3d-1.924401955716943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca1fdc77f41cb%3A0x395674b2bd7266ff!2sSalim%20Saleh%20Fitness!5e0!3m2!1sen!2srw!4v1760197863603!5m2!1sen!2srw"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Salim Saleh Location"
+            ></iframe>
           </div>
+        </div>
 
       </div>
     </section>

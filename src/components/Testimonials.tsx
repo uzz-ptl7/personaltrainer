@@ -74,7 +74,7 @@ const Testimonials = () => {
       is_featured: true
     },
     {
-      id: '2', 
+      id: '2',
       title: 'Mike\'s Muscle Building Journey',
       description: 'Gained 15 pounds of muscle while traveling for work',
       video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
@@ -185,27 +185,35 @@ const Testimonials = () => {
       is_featured: false
     };
 
-    const { error } = await supabase
-      .from('text_testimonials')
-      .insert([newTestimonial]);
+    try {
+      const FORMSPREE_URL = (window as any).TESTIMONIALS_FORMSPREE || "https://formspree.io/f/your-form-id";
 
-    if (error) {
+      await Promise.allSettled([
+        supabase
+          .from('text_testimonials')
+          .insert([newTestimonial]),
+        fetch(FORMSPREE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user?.id, ...formData })
+        })
+      ]);
+
+      toast({
+        title: "Testimonial Submitted!",
+        description: "Thank you! Your testimonial is pending approval and will be visible once reviewed.",
+      });
+
+      reset();
+      setIsTextModalOpen(false);
+    } catch (error) {
       toast({
         title: "Submission Failed",
         description: "Failed to submit testimonial. Please try again.",
         variant: "destructive"
       });
       console.error(error);
-      return;
     }
-
-    toast({
-      title: "Testimonial Submitted!",
-      description: "Thank you! Your testimonial is pending approval and will be visible once reviewed.",
-    });
-    
-    reset();
-    setIsTextModalOpen(false);
   };
 
   return (
@@ -218,7 +226,7 @@ const Testimonials = () => {
             <span className="text-gradient-primary">Stories</span>
           </h2>
           <p className="font-body text-lg text-muted-foreground max-w-2xl mx-auto">
-            Real transformations from real people. These are just a few of the incredible 
+            Real transformations from real people. These are just a few of the incredible
             journeys I've had the privilege to be part of.
           </p>
         </div>
@@ -279,12 +287,12 @@ const Testimonials = () => {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  
+
                   {/* Navigation buttons for large screens - positioned on sides */}
                   <CarouselPrevious className="hidden lg:flex" />
                   <CarouselNext className="hidden lg:flex" />
                 </Carousel>
-                
+
                 {/* Navigation buttons for small/medium screens - centered below with spacing */}
                 <div className="flex justify-center items-center gap-6 mt-6 lg:hidden">
                   <Button
@@ -322,8 +330,8 @@ const Testimonials = () => {
             <div className="text-center mb-8">
               <Dialog open={isTextModalOpen} onOpenChange={setIsTextModalOpen}>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
@@ -339,60 +347,60 @@ const Testimonials = () => {
                   </DialogHeader>
                   <form className="space-y-4" onSubmit={handleSubmit(onSubmitTextTestimonial)}>
                     <div className="grid grid-cols-2 gap-4">
-                      <Input 
-                        {...register("name", { required: true })} 
-                        disabled={isSubmitting} 
-                        placeholder="Your Name" 
+                      <Input
+                        {...register("name", { required: true })}
+                        disabled={isSubmitting}
+                        placeholder="Your Name"
                       />
-                      <Input 
-                        {...register("role", { required: true })} 
-                        disabled={isSubmitting} 
-                        placeholder="Your Role/Profession" 
+                      <Input
+                        {...register("role", { required: true })}
+                        disabled={isSubmitting}
+                        placeholder="Your Role/Profession"
                       />
                     </div>
-                    <Input 
-                      {...register("company")} 
-                      disabled={isSubmitting} 
-                      placeholder="Company (optional)" 
+                    <Input
+                      {...register("company")}
+                      disabled={isSubmitting}
+                      placeholder="Company (optional)"
                     />
-                    <Textarea 
-                      {...register("content", { required: true })} 
-                      disabled={isSubmitting} 
-                      rows={4} 
-                      placeholder="Share your experience..." 
+                    <Textarea
+                      {...register("content", { required: true })}
+                      disabled={isSubmitting}
+                      rows={4}
+                      placeholder="Share your experience..."
                     />
                     <div className="grid grid-cols-2 gap-4">
-                      <Input 
-                        {...register("rating", { required: true, min: 1, max: 5 })} 
-                        disabled={isSubmitting} 
-                        type="number" 
-                        min={1} 
-                        max={5} 
-                        placeholder="Rating (1-5)" 
+                      <Input
+                        {...register("rating", { required: true, min: 1, max: 5 })}
+                        disabled={isSubmitting}
+                        type="number"
+                        min={1}
+                        max={5}
+                        placeholder="Rating (1-5)"
                       />
-                      <Input 
-                        {...register("website")} 
-                        disabled={isSubmitting} 
-                        placeholder="Website (optional)" 
+                      <Input
+                        {...register("website")}
+                        disabled={isSubmitting}
+                        placeholder="Website (optional)"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <Input 
-                        {...register("email", { required: true })} 
-                        disabled={isSubmitting} 
-                        type="email" 
-                        placeholder="Email" 
+                      <Input
+                        {...register("email", { required: true })}
+                        disabled={isSubmitting}
+                        type="email"
+                        placeholder="Email"
                       />
-                      <Input 
-                        {...register("phone", { required: true })} 
-                        disabled={isSubmitting} 
-                        type="tel" 
-                        placeholder="Phone" 
+                      <Input
+                        {...register("phone", { required: true })}
+                        disabled={isSubmitting}
+                        type="tel"
+                        placeholder="Phone"
                       />
                     </div>
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting} 
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
                       className="w-full bg-gradient-primary"
                     >
                       {isSubmitting ? "Submitting..." : "Submit Review"}
@@ -430,7 +438,7 @@ const Testimonials = () => {
                                 </span>
                               )}
                             </div>
-                            
+
                             <div className="relative">
                               <Quote className="absolute top-0 right-0 h-8 w-8 text-primary/10" />
                               <blockquote className="font-body text-foreground text-sm leading-relaxed">
@@ -448,7 +456,7 @@ const Testimonials = () => {
                                   {testimonial.company && `, ${testimonial.company}`}
                                 </p>
                               </div>
-                              
+
                               <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
                                 {testimonial.website && (
                                   <a
@@ -482,12 +490,12 @@ const Testimonials = () => {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  
+
                   {/* Navigation buttons for large screens */}
                   <CarouselPrevious className="hidden lg:flex" />
                   <CarouselNext className="hidden lg:flex" />
                 </Carousel>
-                
+
                 {/* Navigation buttons for small/medium screens - centered below with spacing */}
                 <div className="flex justify-center items-center gap-6 mt-6 lg:hidden">
                   <Button
@@ -512,11 +520,10 @@ const Testimonials = () => {
               </div>
             ) : (
               // Grid layout for 3 or fewer testimonials
-              <div className={`grid gap-6 max-w-6xl mx-auto ${
-                textTestimonials.length === 1 ? 'grid-cols-1 max-w-2xl' :
-                textTestimonials.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl' :
-                'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-              }`}>
+              <div className={`grid gap-6 max-w-6xl mx-auto ${textTestimonials.length === 1 ? 'grid-cols-1 max-w-2xl' :
+                  textTestimonials.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl' :
+                    'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                }`}>
                 {textTestimonials.map((testimonial) => (
                   <Card key={testimonial.id} className="bg-gradient-card border border-border shadow-elevation h-full">
                     <CardContent className="p-6 space-y-4">
@@ -528,7 +535,7 @@ const Testimonials = () => {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="relative">
                         <Quote className="absolute top-0 right-0 h-8 w-8 text-primary/10" />
                         <blockquote className="font-body text-foreground text-sm leading-relaxed">
@@ -546,7 +553,7 @@ const Testimonials = () => {
                             {testimonial.company && `, ${testimonial.company}`}
                           </p>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
                           {testimonial.website && (
                             <a

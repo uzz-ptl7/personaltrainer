@@ -10,14 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Users, 
+import {
+  Users,
   Calendar as CalendarIcon,
-  Settings, 
-  Bell, 
-  UserX, 
-  Phone, 
-  Mail, 
+  Settings,
+  Bell,
+  UserX,
+  Phone,
+  Mail,
   MessageCircle,
   Plus,
   Edit,
@@ -141,6 +141,30 @@ interface NewsletterSubscriber {
   is_active: boolean;
 }
 
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+  source?: string;
+  created_at: string;
+  processed?: boolean;
+}
+
+interface OneTimeRequest {
+  id: string;
+  name: string;
+  email: string;
+  goal?: string;
+  fitness_level?: string;
+  allergies?: string;
+  notes?: string;
+  source?: string;
+  created_at: string;
+  processed?: boolean;
+}
+
 interface FitnessAssessment {
   id: string;
   user_id: string;
@@ -167,7 +191,7 @@ interface FitnessAssessment {
 
 const bodyTypes = [
   "Hidden Obese",
-  "Obese", 
+  "Obese",
   "Solidly-built",
   "Under exercised",
   "Standard",
@@ -187,6 +211,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const [textTestimonials, setTextTestimonials] = useState<TextTestimonial[]>([]);
   const [newsletterSubscribers, setNewsletterSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [fitnessAssessments, setFitnessAssessments] = useState<FitnessAssessment[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [oneTimeRequests, setOneTimeRequests] = useState<OneTimeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<Profile | null>(null);
   const [newBooking, setNewBooking] = useState({
@@ -207,7 +233,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     includes_workout: false,
     includes_meet: false
   });
-  
+
   const [editingService, setEditingService] = useState<string | null>(null);
   const [editServiceData, setEditServiceData] = useState<any>({});
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -226,18 +252,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         setAvailableServices([]);
         return;
       }
-      
+
       console.log('🔍 AdminDashboard: Fetching services for client:', newBooking.user_id);
-      
+
       try {
         // First, let's check ALL purchases for this user (regardless of payment status)
         const { data: allPurchasesData, error: allPurchasesError } = await supabase
           .from('purchases')
           .select('id, service_id, payment_status, user_id')
           .eq('user_id', newBooking.user_id);
-        
+
         console.log('🔍 ALL purchases for this user (any status):', allPurchasesData);
-        
+
         // If there are pending purchases, let's log them for manual update
         if (allPurchasesData && allPurchasesData.length > 0) {
           const pendingPurchases = allPurchasesData.filter(p => p.payment_status === 'pending');
@@ -250,14 +276,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             console.log('🔧 To fix this, run in console: window.updatePurchaseStatus("161a8654-c76d-48e8-b89f-b22e4b9c2c7f", "completed")');
           }
         }
-        
+
         // Get client's completed purchases
         const { data: purchasesData, error: purchasesError } = await supabase
           .from('purchases')
           .select('id, service_id, payment_status, user_id')
           .eq('user_id', newBooking.user_id)
           .eq('payment_status', 'completed');
-        
+
         if (purchasesError) throw purchasesError;
         console.log('🛒 Client purchases (completed only):', purchasesData);
 
@@ -272,7 +298,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           .from('services')
           .select('id, title')
           .in('id', serviceIds);
-        
+
         if (servicesError) throw servicesError;
         console.log('🎯 Available services for client:', servicesData);
 
@@ -287,12 +313,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
   // Get available services for selected client
   const getAvailableServicesForClient = (clientId: string) => {
-    const clientPurchases = purchases.filter(p => 
-      p.user_id === clientId && 
+    const clientPurchases = purchases.filter(p =>
+      p.user_id === clientId &&
       p.payment_status === 'completed'
     );
-    
-    return services.filter(service => 
+
+    return services.filter(service =>
       clientPurchases.some(purchase => purchase.service_id === service.id)
     );
   };
@@ -304,15 +330,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .from('purchases')
         .update({ payment_status: newStatus })
         .eq('id', purchaseId);
-      
+
       if (error) throw error;
-      
+
       console.log(`✅ Updated purchase ${purchaseId} to ${newStatus} status`);
       toast({
         title: "Success",
         description: `Purchase status updated to ${newStatus}`,
       });
-      
+
       // Reload data
       loadData();
     } catch (error) {
@@ -328,10 +354,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   useEffect(() => {
     loadData();
     const cleanup = setupRealtimeSubscriptions();
-    
+
     // Add helper function to window for console access
     (window as any).updatePurchaseStatus = updatePurchaseStatus;
-    
+
     return cleanup;
   }, []);
 
@@ -342,7 +368,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
@@ -356,7 +382,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .from('profiles')
         .select('*')
         .eq('is_admin', false);
-      
+
       // Load purchases and services separately, then join manually
       const { data: purchasesData } = await supabase
         .from('purchases')
@@ -367,13 +393,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .from('services')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       // Load bookings separately
       const { data: bookingsData } = await supabase
         .from('bookings')
         .select('*')
         .order('scheduled_at', { ascending: true });
-      
+
       // Load notifications
       const { data: notificationsData } = await supabase
         .from('notifications')
@@ -392,6 +418,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         .from('newsletter_subscribers')
         .select('*')
         .order('subscribed_at', { ascending: false });
+
+      // Load contact form submissions (if table exists)
+      let contactsData: any[] = [];
+      try {
+        const { data: cData } = await supabase
+          .from('contacts' as any)
+          .select('*')
+          .order('created_at', { ascending: false });
+        contactsData = cData || [];
+      } catch (err) {
+        console.log('Contacts table not available yet');
+      }
+
+      // Load one-time requests (if table exists)
+      let oneTimeData: any[] = [];
+      try {
+        const { data: rData } = await supabase
+          .from('one_time_requests' as any)
+          .select('*')
+          .order('created_at', { ascending: false });
+        oneTimeData = rData || [];
+      } catch (err) {
+        console.log('one_time_requests table not available yet');
+      }
 
       // Load fitness assessments
       let fitnessAssessmentsData: any[] = [];
@@ -450,17 +500,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           purchased_at: purchase.purchased_at ?? '',
           profiles: purchase.profiles
             ? {
-                ...purchase.profiles,
-                full_name: purchase.profiles.full_name ?? '',
-                email: purchase.profiles.email ?? '',
-                phone: purchase.profiles.phone ?? '',
-                phone_country_code: purchase.profiles.phone_country_code ?? '',
-                country: purchase.profiles.country ?? '',
-                last_seen: purchase.profiles.last_seen ?? '',
-                created_at: purchase.profiles.created_at ?? '',
-                is_blocked: purchase.profiles.is_blocked ?? false,
-                is_online: purchase.profiles.is_online ?? false,
-              }
+              ...purchase.profiles,
+              full_name: purchase.profiles.full_name ?? '',
+              email: purchase.profiles.email ?? '',
+              phone: purchase.profiles.phone ?? '',
+              phone_country_code: purchase.profiles.phone_country_code ?? '',
+              country: purchase.profiles.country ?? '',
+              last_seen: purchase.profiles.last_seen ?? '',
+              created_at: purchase.profiles.created_at ?? '',
+              is_blocked: purchase.profiles.is_blocked ?? false,
+              is_online: purchase.profiles.is_online ?? false,
+            }
             : undefined,
           service: {
             ...purchase.service,
@@ -483,17 +533,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           meet_link: booking.meet_link ?? '',
           profiles: booking.profiles
             ? {
-                ...booking.profiles,
-                full_name: booking.profiles.full_name ?? '',
-                email: booking.profiles.email ?? '',
-                phone: booking.profiles.phone ?? '',
-                phone_country_code: booking.profiles.phone_country_code ?? '',
-                country: booking.profiles.country ?? '',
-                last_seen: booking.profiles.last_seen ?? '',
-                created_at: booking.profiles.created_at ?? '',
-                is_blocked: booking.profiles.is_blocked ?? false,
-                is_online: booking.profiles.is_online ?? false,
-              }
+              ...booking.profiles,
+              full_name: booking.profiles.full_name ?? '',
+              email: booking.profiles.email ?? '',
+              phone: booking.profiles.phone ?? '',
+              phone_country_code: booking.profiles.phone_country_code ?? '',
+              country: booking.profiles.country ?? '',
+              last_seen: booking.profiles.last_seen ?? '',
+              created_at: booking.profiles.created_at ?? '',
+              is_blocked: booking.profiles.is_blocked ?? false,
+              is_online: booking.profiles.is_online ?? false,
+            }
             : undefined,
           service: {
             ...booking.service,
@@ -529,7 +579,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           created_at: notification.created_at ?? '',
         }))
       );
-        setTextTestimonials(
+      setTextTestimonials(
         enrichedTestimonials.map((testimonial) => ({
           ...testimonial,
           content: testimonial.content ?? '',
@@ -546,17 +596,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           updated_at: testimonial.updated_at ?? '',
           profiles: testimonial.profiles
             ? {
-                ...testimonial.profiles,
-                full_name: testimonial.profiles.full_name ?? '',
-                email: testimonial.profiles.email ?? '',
-                phone: testimonial.profiles.phone ?? '',
-                phone_country_code: testimonial.profiles.phone_country_code ?? '',
-                country: testimonial.profiles.country ?? '',
-                last_seen: testimonial.profiles.last_seen ?? '',
-                created_at: testimonial.profiles.created_at ?? '',
-                is_blocked: testimonial.profiles.is_blocked ?? false,
-                is_online: testimonial.profiles.is_online ?? false,
-              }
+              ...testimonial.profiles,
+              full_name: testimonial.profiles.full_name ?? '',
+              email: testimonial.profiles.email ?? '',
+              phone: testimonial.profiles.phone ?? '',
+              phone_country_code: testimonial.profiles.phone_country_code ?? '',
+              country: testimonial.profiles.country ?? '',
+              last_seen: testimonial.profiles.last_seen ?? '',
+              created_at: testimonial.profiles.created_at ?? '',
+              is_blocked: testimonial.profiles.is_blocked ?? false,
+              is_online: testimonial.profiles.is_online ?? false,
+            }
             : undefined,
         }))
       );
@@ -567,6 +617,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           is_active: subscriber.is_active ?? false,
         }))
       );
+      setContacts((contactsData || []).map((c) => ({
+        ...c,
+        name: c.name ?? '',
+        email: c.email ?? '',
+        phone: c.phone ?? '',
+        message: c.message ?? '',
+        source: c.source ?? '',
+        created_at: c.created_at ?? '',
+      })));
+
+      setOneTimeRequests((oneTimeData || []).map((r) => ({
+        ...r,
+        name: r.name ?? '',
+        email: r.email ?? '',
+        goal: r.goal ?? '',
+        fitness_level: r.fitness_level ?? '',
+        allergies: r.allergies ?? '',
+        notes: r.notes ?? '',
+        source: r.source ?? '',
+        created_at: r.created_at ?? '',
+      })));
       setFitnessAssessments(
         enrichedAssessments.map((assessment) => ({
           ...assessment,
@@ -590,17 +661,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           updated_at: assessment.updated_at ?? '',
           profiles: assessment.profiles
             ? {
-                ...assessment.profiles,
-                full_name: assessment.profiles.full_name ?? '',
-                email: assessment.profiles.email ?? '',
-                phone: assessment.profiles.phone ?? '',
-                phone_country_code: assessment.profiles.phone_country_code ?? '',
-                country: assessment.profiles.country ?? '',
-                last_seen: assessment.profiles.last_seen ?? '',
-                created_at: assessment.profiles.created_at ?? '',
-                is_blocked: assessment.profiles.is_blocked ?? false,
-                is_online: assessment.profiles.is_online ?? false,
-              }
+              ...assessment.profiles,
+              full_name: assessment.profiles.full_name ?? '',
+              email: assessment.profiles.email ?? '',
+              phone: assessment.profiles.phone ?? '',
+              phone_country_code: assessment.profiles.phone_country_code ?? '',
+              country: assessment.profiles.country ?? '',
+              last_seen: assessment.profiles.last_seen ?? '',
+              created_at: assessment.profiles.created_at ?? '',
+              is_blocked: assessment.profiles.is_blocked ?? false,
+              is_online: assessment.profiles.is_online ?? false,
+            }
             : undefined,
         }))
       );
@@ -660,6 +731,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       )
       .subscribe();
 
+    const contactsChannel = supabase
+      .channel('admin-contacts')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'contacts' },
+        () => loadData()
+      )
+      .subscribe();
+
+    const oneTimeChannel = supabase
+      .channel('admin-one-time-requests')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'one_time_requests' },
+        () => loadData()
+      )
+      .subscribe();
+
     const assessmentsChannel = supabase
       .channel('admin-fitness-assessments')
       .on('postgres_changes',
@@ -675,6 +762,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(testimonialsChannel);
       supabase.removeChannel(subscribersChannel);
+      supabase.removeChannel(contactsChannel);
+      supabase.removeChannel(oneTimeChannel);
       supabase.removeChannel(assessmentsChannel);
     };
   };
@@ -692,7 +781,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: `Client ${blocked ? 'blocked' : 'unblocked'} successfully`,
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -706,8 +795,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
   const scheduleBooking = async () => {
     try {
       // Find an active purchase for this user and service
-      const purchase = purchases.find(p => 
-        p.user_id === newBooking.user_id && 
+      const purchase = purchases.find(p =>
+        p.user_id === newBooking.user_id &&
         p.service_id === newBooking.service_id &&
         p.payment_status === 'completed'
       );
@@ -785,7 +874,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         includes_workout: false,
         includes_meet: false
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -803,7 +892,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
   const updateService = async () => {
     if (!editingService) return;
-    
+
     try {
       const { error } = await supabase
         .from('services')
@@ -838,10 +927,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       // Delete related data first due to foreign key constraints
       await supabase.from('bookings').delete().eq('service_id', serviceId);
       await supabase.from('purchases').delete().eq('service_id', serviceId);
-      
+
       // Delete the service
       const { error } = await supabase.from('services').delete().eq('id', serviceId);
-      
+
       if (error) throw error;
 
       toast({
@@ -860,6 +949,84 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
+  // Admin helper: seed default plans requested by client
+  const seedDefaultPlans = async () => {
+    if (!confirm('Create default plans (90-day recurring + one-time plans)?')) return;
+    try {
+      const plans = [
+        {
+          title: '90-Day Customized Program',
+          description: '90-day personalized coaching (recurring). Includes assessment, personalized workout & diet plan, weekly check-ins, daily accountability and downloadable PDFs. Billing: $250 per month.',
+          type: 'program',
+          price: 250,
+          duration_weeks: 12,
+          duration_minutes: 0,
+          includes_nutrition: true,
+          includes_workout: true,
+          includes_meet: true,
+          is_active: true
+        },
+        {
+          title: 'One-time Customized Diet Plan',
+          description: 'Custom diet plan delivered as PDF. One-time purchase. No ongoing coaching.',
+          type: 'program',
+          price: 25,
+          duration_weeks: 0,
+          duration_minutes: 0,
+          includes_nutrition: true,
+          includes_workout: false,
+          includes_meet: false,
+          is_active: true
+        },
+        {
+          title: 'One-time Customized Workout Plan',
+          description: 'Custom workout plan delivered as PDF. One-time purchase. No ongoing coaching.',
+          type: 'program',
+          price: 49.99,
+          duration_weeks: 0,
+          duration_minutes: 0,
+          includes_nutrition: false,
+          includes_workout: true,
+          includes_meet: false,
+          is_active: true
+        },
+        {
+          title: 'Ultimate Weight Loss Diet Plan (Pre-made)',
+          description: 'Pre-made diet plan for weight loss. Immediate download after purchase.',
+          type: 'program',
+          price: 25,
+          duration_weeks: 0,
+          duration_minutes: 0,
+          includes_nutrition: true,
+          includes_workout: false,
+          includes_meet: false,
+          is_active: true
+        },
+        {
+          title: '30-Day Strength Builder (Pre-made)',
+          description: '30 day pre-made strength program. Immediate download after purchase.',
+          type: 'program',
+          price: 25,
+          duration_weeks: 4,
+          duration_minutes: 0,
+          includes_nutrition: false,
+          includes_workout: true,
+          includes_meet: false,
+          is_active: true
+        }
+      ];
+
+      const { error } = await supabase.from('services').insert(plans);
+      if (error) throw error;
+
+      toast({ title: 'Success', description: 'Default plans created' });
+      loadData();
+    } catch (err) {
+      console.error('Error seeding default plans:', err);
+      toast({ title: 'Error', description: 'Failed to create default plans', variant: 'destructive' });
+    }
+  };
+
   const toggleServiceStatus = async (serviceId: string, isActive: boolean) => {
     try {
       const { error } = await supabase
@@ -873,7 +1040,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: `Service ${isActive ? 'activated' : 'deactivated'} successfully`,
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -911,7 +1078,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: "Testimonial approved successfully",
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -935,7 +1102,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: "Testimonial rejected and removed",
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -959,7 +1126,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: `Testimonial ${featured ? 'featured' : 'unfeatured'} successfully`,
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -983,7 +1150,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: "Testimonial deleted successfully",
       });
-      
+
       loadData();
     } catch (error) {
       toast({
@@ -991,6 +1158,92 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         description: "Failed to delete testimonial",
         variant: "destructive",
       });
+    }
+  };
+
+  const exportContacts = () => {
+    const dataForExport = contacts.map(c => ({
+      Name: c.name,
+      Email: c.email,
+      Phone: c.phone || '',
+      Message: c.message,
+      Source: c.source || '',
+      'Submitted At': new Date(c.created_at).toLocaleString()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Contacts');
+    const fileName = `contacts_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({ title: 'Success', description: `Exported ${dataForExport.length} contacts to Excel` });
+  };
+
+  const exportOneTimeRequests = () => {
+    const dataForExport = oneTimeRequests.map(r => ({
+      Name: r.name,
+      Email: r.email,
+      Goal: r.goal || '',
+      FitnessLevel: r.fitness_level || '',
+      Allergies: r.allergies || '',
+      Notes: r.notes || '',
+      Source: r.source || '',
+      'Submitted At': new Date(r.created_at).toLocaleString()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'OneTimeRequests');
+    const fileName = `one_time_requests_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({ title: 'Success', description: `Exported ${dataForExport.length} requests to Excel` });
+  };
+
+  const deleteContact = async (id: string) => {
+    if (!confirm('Delete this contact submission?')) return;
+    try {
+      const { error } = await supabase.from('contacts' as any).delete().eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Deleted', description: 'Contact removed' });
+      loadData();
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete contact', variant: 'destructive' });
+    }
+  };
+
+  const toggleProcessedContact = async (id: string, processed: boolean) => {
+    try {
+      const { error } = await supabase.from('contacts' as any).update({ processed }).eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Updated', description: `Contact marked ${processed ? 'processed' : 'unprocessed'}` });
+      loadData();
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to update contact', variant: 'destructive' });
+    }
+  };
+
+  const toggleProcessedOneTimeRequest = async (id: string, processed: boolean) => {
+    try {
+      const { error } = await supabase.from('one_time_requests' as any).update({ processed }).eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Updated', description: `Request marked ${processed ? 'processed' : 'unprocessed'}` });
+      loadData();
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to update request', variant: 'destructive' });
+    }
+  };
+
+  const deleteOneTimeRequest = async (id: string) => {
+    if (!confirm('Delete this one-time request?')) return;
+    try {
+      const { error } = await supabase.from('one_time_requests' as any).delete().eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Deleted', description: 'Request removed' });
+      loadData();
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete request', variant: 'destructive' });
     }
   };
 
@@ -1005,7 +1258,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     const worksheet = XLSX.utils.json_to_sheet(dataForExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Newsletter Subscribers');
-    
+
     const fileName = `newsletter_subscribers_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(workbook, fileName);
 
@@ -1038,7 +1291,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         title: "Success",
         description: "Fitness assessment deleted successfully. User will need to complete assessment again.",
       });
-      
+
       loadData();
     } catch (error) {
       console.error('Error deleting assessment:', error);
@@ -1052,7 +1305,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
   const updateAssessment = async () => {
     if (!editingAssessment) return;
-    
+
     try {
       const { error } = await supabase
         .from('fitness_assessments')
@@ -1089,17 +1342,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       await supabase.from('bookings').delete().eq('user_id', clientId);
       await supabase.from('purchases').delete().eq('user_id', clientId);
       await supabase.from('text_testimonials').delete().eq('user_id', clientId);
-      
+
       // Delete the profile
       const { error } = await supabase.from('profiles').delete().eq('user_id', clientId);
-      
+
       if (error) throw error;
 
       toast({
         title: "Success",
         description: "Client and all related data deleted successfully",
       });
-      
+
       loadData();
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -1118,14 +1371,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
     try {
       const { error } = await supabase.from('purchases').delete().eq('id', purchaseId);
-      
+
       if (error) throw error;
 
       toast({
         title: "Success",
         description: "Purchase deleted successfully",
       });
-      
+
       loadData();
     } catch (error) {
       console.error('Error deleting purchase:', error);
@@ -1144,14 +1397,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
     try {
       const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
-      
+
       if (error) throw error;
 
       toast({
         title: "Success",
         description: "Booking deleted successfully",
       });
-      
+
       loadData();
     } catch (error) {
       console.error('Error deleting booking:', error);
@@ -1186,7 +1439,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     }
   };
 
-  const upcomingSessions = bookings.filter(booking => 
+  const upcomingSessions = bookings.filter(booking =>
     new Date(booking.scheduled_at) > new Date() && booking.status !== 'cancelled'
   );
 
@@ -1205,16 +1458,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     <div className={`min-h-screen bg-background ${isMobileSidebarOpen ? 'overflow-hidden' : ''}`}>
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${
-        isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`fixed left-0 top-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
         {/* Sidebar Header */}
         <div className="p-4 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -1234,7 +1486,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </Button>
           </div>
         </div>
-        
+
         {/* Scrollable Navigation */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-2">
@@ -1247,6 +1499,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               { id: 'assessments', label: 'Fitness Assessments', icon: Activity },
               { id: 'testimonials', label: 'Testimonials', icon: Video },
               { id: 'newsletter', label: 'Newsletter', icon: Mail },
+              { id: 'contacts', label: 'Contacts', icon: Mail },
+              { id: 'one_time_requests', label: 'One-time Requests', icon: FileText },
               { id: 'consultations', label: 'Consultations', icon: Clock },
               { id: 'dietplans', label: 'Diet Plans', icon: FileText },
             ].map((tab) => {
@@ -1258,11 +1512,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     setActiveTab(tab.id);
                     setIsMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    activeTab === tab.id
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === tab.id
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
+                    }`}
                 >
                   <IconComponent className="h-5 w-5" />
                   <span>{tab.label}</span>
@@ -1271,7 +1524,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             })}
           </div>
         </div>
-        
+
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
           <Button
@@ -1307,14 +1560,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              
+
               <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
               <div>
                 <h1 className="font-heading font-bold lg:text-xl text-lg text-foreground">Admin Dashboard</h1>
                 <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
               </div>
             </div>
-            
+
             {/* Desktop Navigation Buttons */}
             <div className="hidden lg:flex items-center space-x-3">
               <Button
@@ -1343,7 +1596,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 w-full overflow-hidden">
           {/* Desktop Tabs */}
           <div className="hidden lg:block w-full overflow-x-auto">
-            <TabsList className="grid grid-cols-10 w-fit">
+            {/* Use inline-flex so tabs scroll horizontally cleanly on smaller desktop widths */}
+            <TabsList className="inline-flex items-center space-x-2 py-2 px-1 w-max">
               <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
@@ -1352,6 +1606,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
               <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
               <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
+              <TabsTrigger value="contacts" className="whitespace-nowrap">Contacts</TabsTrigger>
+              <TabsTrigger value="one_time_requests" className="whitespace-nowrap">One-time Requests</TabsTrigger>
               <TabsTrigger value="consultations" className="whitespace-nowrap">Consultations</TabsTrigger>
               <TabsTrigger value="dietplans" className="whitespace-nowrap">Service Plans</TabsTrigger>
             </TabsList>
@@ -1370,7 +1626,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
@@ -1397,7 +1653,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </CardContent>
               </Card>
 
-                  <Card>
+              <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
                     <Video className="h-8 w-8 text-primary" />
@@ -1448,9 +1704,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 <CardContent>
                   <div className="space-y-3">
                     {notifications.slice(0, 5).map((notification) => (
-                      <div key={notification.id} className={`p-3 rounded-lg border ${
-                        notification.is_read ? 'bg-muted/50' : 'bg-primary/5 border-primary/20'
-                      }`}>
+                      <div key={notification.id} className={`p-3 rounded-lg border ${notification.is_read ? 'bg-muted/50' : 'bg-primary/5 border-primary/20'
+                        }`}>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h4 className="font-medium text-foreground">{notification.title}</h4>
@@ -1511,6 +1766,85 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="contacts" className="space-y-6 w-full overflow-x-hidden">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Contact Submissions
+                </CardTitle>
+                <CardDescription>Messages submitted via the contact form</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex gap-2">
+                  <Button onClick={exportContacts} className="mr-2">Export to Excel</Button>
+                </div>
+                <div className="space-y-3">
+                  {contacts.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No contacts found.</p>
+                  ) : (
+                    contacts.map((c) => (
+                      <div key={c.id} className="p-4 border border-border rounded-lg flex justify-between items-start gap-4">
+                        <div>
+                          <h4 className="font-medium text-foreground">{c.name} {c.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
+                          <p className="text-sm text-muted-foreground">{c.email} • {c.phone}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{c.message}</p>
+                          <p className="text-xs text-muted-foreground mt-2">Submitted: {formatDate(c.created_at)}</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" variant={c.processed ? 'outline' : 'default'} onClick={() => toggleProcessedContact(c.id, !c.processed)}>
+                            {c.processed ? 'Mark Unprocessed' : 'Mark Processed'}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => deleteContact(c.id)}>Delete</Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="one_time_requests" className="space-y-6 w-full overflow-x-hidden">
+            <Card className="bg-gradient-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  One-time Requests
+                </CardTitle>
+                <CardDescription>Custom plan requests submitted by buyers</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex gap-2">
+                  <Button onClick={exportOneTimeRequests} className="mr-2">Export to Excel</Button>
+                </div>
+                <div className="space-y-3">
+                  {oneTimeRequests.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No requests found.</p>
+                  ) : (
+                    oneTimeRequests.map((r) => (
+                      <div key={r.id} className="p-4 border border-border rounded-lg flex justify-between items-start gap-4">
+                        <div>
+                          <h4 className="font-medium text-foreground">{r.name} {r.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
+                          <p className="text-sm text-muted-foreground">{r.email} • {r.fitness_level}</p>
+                          <p className="text-sm text-muted-foreground mt-2">Goal: {r.goal}</p>
+                          {r.notes && <p className="text-sm text-muted-foreground mt-2">Notes: {r.notes}</p>}
+                          <p className="text-xs text-muted-foreground mt-2">Submitted: {formatDate(r.created_at)}</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" variant={r.processed ? 'outline' : 'default'} onClick={() => toggleProcessedOneTimeRequest(r.id, !r.processed)}>
+                            {r.processed ? 'Mark Unprocessed' : 'Mark Processed'}
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => deleteOneTimeRequest(r.id)}>Delete</Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="clients" className="space-y-6 w-full overflow-x-hidden">
@@ -1631,8 +1965,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             </h3>
                             <Badge variant={
                               purchase.payment_status === 'completed' ? 'default' :
-                              purchase.payment_status === 'pending' ? 'secondary' :
-                              purchase.payment_status === 'failed' ? 'destructive' : 'outline'
+                                purchase.payment_status === 'pending' ? 'secondary' :
+                                  purchase.payment_status === 'failed' ? 'destructive' : 'outline'
                             } className="w-fit">
                               {purchase.payment_status}
                             </Badge>
@@ -1694,8 +2028,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label>Client</Label>
-                    <Select 
-                      value={newBooking.user_id} 
+                    <Select
+                      value={newBooking.user_id}
                       onValueChange={(value) => {
                         setNewBooking({ ...newBooking, user_id: value, service_id: '' });
                         setSelectedClient(clients.find(c => c.user_id === value) || null);
@@ -1716,8 +2050,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
                   <div>
                     <Label>Service</Label>
-                    <Select 
-                      value={newBooking.service_id} 
+                    <Select
+                      value={newBooking.service_id}
                       onValueChange={(value) => setNewBooking({ ...newBooking, service_id: value })}
                       disabled={!newBooking.user_id}
                     >
@@ -1773,7 +2107,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   />
                 </div>
 
-                <Button 
+                <Button
                   onClick={scheduleBooking}
                   disabled={!newBooking.user_id || !newBooking.service_id || !newBooking.scheduled_at || !newBooking.meet_link}
                 >
@@ -1846,18 +2180,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 overflow-hidden">
+                <div className="flex justify-end mb-2">
+                  <Button size="sm" variant="outline" onClick={seedDefaultPlans} className="mr-2">
+                    Seed Default Plans
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label>Title</Label>
                     <Input
                       value={newService.title}
-                      onChange={(e) => setNewService({...newService, title: e.target.value})}
+                      onChange={(e) => setNewService({ ...newService, title: e.target.value })}
                       placeholder="Service title"
                     />
                   </div>
                   <div>
                     <Label>Type</Label>
-                    <Select value={newService.type} onValueChange={(value) => setNewService({...newService, type: value})}>
+                    <Select value={newService.type} onValueChange={(value) => setNewService({ ...newService, type: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1873,7 +2212,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   <Label>Description</Label>
                   <Textarea
                     value={newService.description}
-                    onChange={(e) => setNewService({...newService, description: e.target.value})}
+                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
                     placeholder="Service description"
                   />
                 </div>
@@ -1883,7 +2222,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Input
                       type="number"
                       value={newService.price}
-                      onChange={(e) => setNewService({...newService, price: Number(e.target.value)})}
+                      onChange={(e) => setNewService({ ...newService, price: Number(e.target.value) })}
                     />
                   </div>
                   <div>
@@ -1891,7 +2230,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Input
                       type="number"
                       value={newService.duration_weeks}
-                      onChange={(e) => setNewService({...newService, duration_weeks: Number(e.target.value)})}
+                      onChange={(e) => setNewService({ ...newService, duration_weeks: Number(e.target.value) })}
                     />
                   </div>
                   <div>
@@ -1899,7 +2238,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Input
                       type="number"
                       value={newService.duration_minutes}
-                      onChange={(e) => setNewService({...newService, duration_minutes: Number(e.target.value)})}
+                      onChange={(e) => setNewService({ ...newService, duration_minutes: Number(e.target.value) })}
                     />
                   </div>
                 </div>
@@ -1908,7 +2247,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <input
                       type="checkbox"
                       checked={newService.includes_nutrition}
-                      onChange={(e) => setNewService({...newService, includes_nutrition: e.target.checked})}
+                      onChange={(e) => setNewService({ ...newService, includes_nutrition: e.target.checked })}
                     />
                     Includes Nutrition
                   </label>
@@ -1916,7 +2255,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <input
                       type="checkbox"
                       checked={newService.includes_workout}
-                      onChange={(e) => setNewService({...newService, includes_workout: e.target.checked})}
+                      onChange={(e) => setNewService({ ...newService, includes_workout: e.target.checked })}
                     />
                     Includes Workout
                   </label>
@@ -1924,7 +2263,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <input
                       type="checkbox"
                       checked={newService.includes_meet}
-                      onChange={(e) => setNewService({...newService, includes_meet: e.target.checked})}
+                      onChange={(e) => setNewService({ ...newService, includes_meet: e.target.checked })}
                     />
                     Includes Video Call
                   </label>
@@ -1946,7 +2285,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <CardTitle className="break-words text-base sm:text-lg">{service.title}</CardTitle>
                         <CardDescription className="break-words text-sm mt-1">{service.description}</CardDescription>
                       </div>
-                      
+
                       {/* Action Buttons - Stack on mobile, horizontal on large screens */}
                       <div className="flex flex-col sm:flex-row lg:flex-col gap-2 lg:flex-shrink-0">
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -1980,7 +2319,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             Delete
                           </Button>
                         </div>
-                        
+
                         {/* Status and Price */}
                         <div className="flex items-center justify-between sm:justify-start lg:justify-between gap-2 mt-2 lg:mt-2">
                           <Badge variant={service.is_active ? "default" : "secondary"} className="text-xs whitespace-nowrap">
@@ -2024,12 +2363,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <Label>Title</Label>
                         <Input
                           value={editServiceData.title || ''}
-                          onChange={(e) => setEditServiceData({...editServiceData, title: e.target.value})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, title: e.target.value })}
                         />
                       </div>
                       <div>
                         <Label>Type</Label>
-                        <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({...editServiceData, type: value})}>
+                        <Select value={editServiceData.type} onValueChange={(value) => setEditServiceData({ ...editServiceData, type: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -2045,7 +2384,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       <Label>Description</Label>
                       <Textarea
                         value={editServiceData.description || ''}
-                        onChange={(e) => setEditServiceData({...editServiceData, description: e.target.value})}
+                        onChange={(e) => setEditServiceData({ ...editServiceData, description: e.target.value })}
                       />
                     </div>
                     <div className="grid md:grid-cols-3 gap-4">
@@ -2054,7 +2393,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <Input
                           type="number"
                           value={editServiceData.price || 0}
-                          onChange={(e) => setEditServiceData({...editServiceData, price: Number(e.target.value)})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, price: Number(e.target.value) })}
                         />
                       </div>
                       <div>
@@ -2062,7 +2401,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <Input
                           type="number"
                           value={editServiceData.duration_weeks || 0}
-                          onChange={(e) => setEditServiceData({...editServiceData, duration_weeks: Number(e.target.value)})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, duration_weeks: Number(e.target.value) })}
                         />
                       </div>
                       <div>
@@ -2070,7 +2409,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <Input
                           type="number"
                           value={editServiceData.duration_minutes || 0}
-                          onChange={(e) => setEditServiceData({...editServiceData, duration_minutes: Number(e.target.value)})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, duration_minutes: Number(e.target.value) })}
                         />
                       </div>
                     </div>
@@ -2079,7 +2418,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <input
                           type="checkbox"
                           checked={editServiceData.includes_nutrition || false}
-                          onChange={(e) => setEditServiceData({...editServiceData, includes_nutrition: e.target.checked})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, includes_nutrition: e.target.checked })}
                         />
                         Includes Nutrition
                       </label>
@@ -2087,7 +2426,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <input
                           type="checkbox"
                           checked={editServiceData.includes_workout || false}
-                          onChange={(e) => setEditServiceData({...editServiceData, includes_workout: e.target.checked})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, includes_workout: e.target.checked })}
                         />
                         Includes Workout
                       </label>
@@ -2095,7 +2434,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         <input
                           type="checkbox"
                           checked={editServiceData.includes_meet || false}
-                          onChange={(e) => setEditServiceData({...editServiceData, includes_meet: e.target.checked})}
+                          onChange={(e) => setEditServiceData({ ...editServiceData, includes_meet: e.target.checked })}
                         />
                         Includes Video Call
                       </label>
@@ -2122,7 +2461,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <Mail className="h-5 w-5" />
                     Newsletter Subscribers ({newsletterSubscribers.length})
                   </div>
-                  <Button 
+                  <Button
                     onClick={exportNewsletterSubscribers}
                     className="bg-gradient-primary hover:shadow-primary"
                   >
@@ -2302,7 +2641,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.weight_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, weight_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, weight_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2311,7 +2650,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.bmi || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bmi: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bmi: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2320,7 +2659,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.body_fat_percentage || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_percentage: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_fat_percentage: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2328,7 +2667,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       <Input
                         type="number"
                         value={editAssessmentData.heart_rate_bpm || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, heart_rate_bpm: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, heart_rate_bpm: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2337,7 +2676,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.muscle_mass_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, muscle_mass_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2345,7 +2684,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       <Input
                         type="number"
                         value={editAssessmentData.bmr_kcal || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bmr_kcal: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bmr_kcal: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2354,7 +2693,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.water_percentage || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, water_percentage: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, water_percentage: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2362,7 +2701,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       <Input
                         type="number"
                         value={editAssessmentData.visceral_fat || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, visceral_fat: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, visceral_fat: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2371,7 +2710,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.body_fat_mass_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_fat_mass_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2380,7 +2719,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.lean_body_mass_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, lean_body_mass_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2389,7 +2728,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.bone_mass_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, bone_mass_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, bone_mass_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2398,7 +2737,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.protein_percentage || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, protein_percentage: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, protein_percentage: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2407,7 +2746,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.skeletal_muscle_mass_kg || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, skeletal_muscle_mass_kg: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2416,7 +2755,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                         type="number"
                         step="0.1"
                         value={editAssessmentData.subcutaneous_fat_percentage || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, subcutaneous_fat_percentage: parseFloat(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -2424,14 +2763,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                       <Input
                         type="number"
                         value={editAssessmentData.body_age || ''}
-                        onChange={(e) => setEditAssessmentData({...editAssessmentData, body_age: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setEditAssessmentData({ ...editAssessmentData, body_age: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
                       <Label>Body Type</Label>
-                      <Select 
-                        value={editAssessmentData.body_type || ''} 
-                        onValueChange={(value) => setEditAssessmentData({...editAssessmentData, body_type: value})}
+                      <Select
+                        value={editAssessmentData.body_type || ''}
+                        onValueChange={(value) => setEditAssessmentData({ ...editAssessmentData, body_type: value })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -2447,8 +2786,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setEditingAssessment(null)}
                     >
                       Cancel
@@ -2485,7 +2824,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             <div className="flex-1">
                               <div className="font-medium">{testimonial.name}</div>
                               <div className="text-sm text-muted-foreground mb-2">
-                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} • 
+                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} •
                                 Rating: {testimonial.rating}/5 • {new Date(testimonial.created_at).toLocaleDateString()}
                               </div>
                               <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
@@ -2497,16 +2836,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                               </div>
                             </div>
                             <div className="flex gap-2 ml-4">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 onClick={() => approveTestimonial(testimonial.id)}
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Approve
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="destructive"
                                 onClick={() => rejectTestimonial(testimonial.id)}
                               >
@@ -2532,7 +2871,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             <div className="flex-1">
                               <div className="font-medium">{testimonial.name}</div>
                               <div className="text-sm text-muted-foreground mb-2">
-                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} • 
+                                {testimonial.role} {testimonial.company && `at ${testimonial.company}`} •
                                 Rating: {testimonial.rating}/5 • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
                               </div>
                               <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
@@ -2540,15 +2879,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                               </div>
                             </div>
                             <div className="flex gap-2 ml-4">
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="outline"
                                 onClick={() => toggleFeature(testimonial.id, !testimonial.is_featured)}
                               >
                                 {testimonial.is_featured ? 'Unfeature' : 'Feature'}
                               </Button>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 variant="destructive"
                                 onClick={() => deleteTestimonial(testimonial.id)}
                               >

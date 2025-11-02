@@ -72,7 +72,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
         // User already has assessment, redirect to dashboard
         window.location.href = '/dashboard';
       }
-      
+
       if (error) {
         console.log('Assessment check error:', error);
         // If it's a policy error or 406, we'll continue with the form
@@ -94,7 +94,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
   const handleNeedHelp = () => {
     const whatsappMessage = "Hi! I need help completing my fitness assessment. Could we schedule a meeting to go through it together?";
     const encodedMessage = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/250789842205?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/250788624496?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -108,7 +108,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
   const validateForm = () => {
     const requiredFields = Object.keys(data) as (keyof AssessmentData)[];
     const emptyFields = requiredFields.filter(field => !data[field].trim());
-    
+
     if (emptyFields.length > 0) {
       toast({
         variant: "destructive",
@@ -120,7 +120,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
 
     // Validate numeric fields
     const numericFields = [
-      'weight_kg', 'bmi', 'body_fat_percentage', 'heart_rate_bpm', 
+      'weight_kg', 'bmi', 'body_fat_percentage', 'heart_rate_bpm',
       'muscle_mass_kg', 'bmr_kcal', 'water_percentage', 'body_fat_mass_kg',
       'lean_body_mass_kg', 'bone_mass_kg', 'visceral_fat', 'protein_percentage',
       'skeletal_muscle_mass_kg', 'subcutaneous_fat_percentage', 'body_age'
@@ -143,14 +143,13 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
 
     try {
       const assessmentData = {
-        user_id: user.id,
         weight_kg: parseFloat(data.weight_kg),
         bmi: parseFloat(data.bmi),
         body_fat_percentage: parseFloat(data.body_fat_percentage),
@@ -171,7 +170,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
 
       const { error } = await supabase
         .from('fitness_assessments')
-        .insert([assessmentData]);
+        .insert([{ user_id: user.id, ...assessmentData }]);
 
       if (error) {
         console.error('Assessment save error:', error);
@@ -185,6 +184,18 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
           title: "Assessment Complete!",
           description: "Your fitness assessment has been saved successfully.",
         });
+        // Also send assessment to Formspree (optional notification)
+        try {
+          const FORMSPREE_URL = (window as any).FITNESS_ASSESSMENT_FORMSPREE || "https://formspree.io/f/your-form-id";
+          await fetch(FORMSPREE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: user.id, ...assessmentData })
+          });
+        } catch (err) {
+          console.warn('Formspree warning:', err);
+        }
+
         onComplete();
       }
     } catch (error) {
@@ -200,7 +211,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
 
   const bodyTypes = [
     "Ectomorph",
-    "Mesomorph", 
+    "Mesomorph",
     "Endomorph",
     "Ecto-Mesomorph",
     "Meso-Endomorph"
@@ -220,11 +231,11 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
               Fitness Assessment
             </CardTitle>
             <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Complete your fitness assessment to get started with your personalized training journey. 
+              Complete your fitness assessment to get started with your personalized training journey.
               This information helps us create the perfect program for you.
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Basic Metrics */}
@@ -233,7 +244,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                   <Scale className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold text-foreground">Basic Metrics</h3>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="weight_kg">Weight (KG)</Label>
@@ -247,7 +258,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="bmi">BMI</Label>
                     <Input
@@ -260,7 +271,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="body_age">Body Age</Label>
                     <Input
@@ -272,7 +283,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="body_type">Body Type</Label>
                     <Select value={data.body_type} onValueChange={(value) => handleInputChange('body_type', value)}>
@@ -297,7 +308,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                   <Zap className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold text-foreground">Body Composition</h3>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="body_fat_percentage">Body Fat (%)</Label>
@@ -311,7 +322,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="muscle_mass_kg">Muscle Mass (KG)</Label>
                     <Input
@@ -324,7 +335,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="water_percentage">Water (%)</Label>
                     <Input
@@ -337,7 +348,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="body_fat_mass_kg">Body Fat Mass (KG)</Label>
                     <Input
@@ -350,7 +361,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="lean_body_mass_kg">Lean Body Mass (KG)</Label>
                     <Input
@@ -363,7 +374,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="bone_mass_kg">Bone Mass (KG)</Label>
                     <Input
@@ -376,7 +387,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="protein_percentage">Protein (%)</Label>
                     <Input
@@ -389,7 +400,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="skeletal_muscle_mass_kg">Skeletal Muscle Mass (KG)</Label>
                     <Input
@@ -402,7 +413,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="subcutaneous_fat_percentage">Subcutaneous Fat (%)</Label>
                     <Input
@@ -424,7 +435,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                   <Heart className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold text-foreground">Health Metrics</h3>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="heart_rate_bpm">Heart Rate (BPM)</Label>
@@ -437,7 +448,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="bmr_kcal">BMR (KCAL)</Label>
                     <Input
@@ -449,7 +460,7 @@ const FitnessAssessment = ({ user, onComplete }: FitnessAssessmentProps) => {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="visceral_fat">Visceral Fat</Label>
                     <Input
