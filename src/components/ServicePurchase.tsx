@@ -186,7 +186,7 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Service features */}
         <div className="flex flex-wrap gap-2">
@@ -237,10 +237,10 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
               <SelectValue placeholder="Select payment method" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="momo">Mobile Money (MoMo)</SelectItem>
-                <SelectItem value="flutterwave">Card / Mobile Money (Flutterwave)</SelectItem>
-                <SelectItem value="paypal">PayPal</SelectItem>
-                <SelectItem value="irembopay">IremboPay (Cards)</SelectItem>
+              <SelectItem value="momo">Mobile Money (MoMo)</SelectItem>
+              <SelectItem value="flutterwave">Card / Mobile Money (Flutterwave)</SelectItem>
+              <SelectItem value="paypal">PayPal</SelectItem>
+              <SelectItem value="irembopay">IremboPay (Cards)</SelectItem>
             </SelectContent>
           </Select>
         </div>

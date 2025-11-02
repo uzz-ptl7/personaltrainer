@@ -84,9 +84,11 @@ Fix any TypeScript errors, replace `as any` usages, and re-run `npm run build` u
 ## Seed default plans / products
 
 Option A — Admin UI (quick):
+
 - Start the app locally (`npm run dev`) and sign in as admin. Open the Admin dashboard and use the "Seed Default Plans" button in Services tab (function `seedDefaultPlans()` exists) to create the 90-Day program and one-time products.
 
 Option B — Manual SQL (if you prefer direct DB seed):
+
 - Use Supabase SQL Editor and run INSERT statements into the `services` table. Example (adjust columns to your schema):
 
 ```sql
@@ -103,6 +105,7 @@ VALUES
 Why: client-side checkout can be faked. You must verify each transaction server-side (or via webhook) with your `FLUTTERWAVE_SECRET_KEY` and then mark the purchase confirmed in Supabase.
 
 Two options:
+
 - Poll / verify after client redirects back (server endpoint verifies tx_ref). Good for immediate confirmations.
 - Configure a webhook in Flutterwave dashboard to call your serverless function on status change. Webhook is more reliable (async).
 
@@ -110,8 +113,8 @@ Minimal Netlify function (Node + fetch). Save as `netlify/functions/verify-flutt
 
 ```javascript
 // netlify/functions/verify-flutterwave.js
-const fetch = require('node-fetch');
-const { createClient } = require('@supabase/supabase-js');
+const fetch = require("node-fetch");
+const { createClient } = require("@supabase/supabase-js");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -121,23 +124,23 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 exports.handler = async function (event) {
   try {
-    const { tx_ref, transaction_id } = JSON.parse(event.body || '{}');
+    const { tx_ref, transaction_id } = JSON.parse(event.body || "{}");
     // Prefer transaction_id if provided by Flutterwave webhook, otherwise verify tx_ref
 
     const verifyUrl = `https://api.ravepay.co/flwv3-pug/getpaidx/api/v2/verify`;
     const body = transaction_id ? { id: transaction_id } : { tx_ref };
 
     const resp = await fetch(verifyUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${FLW_SECRET}`,
       },
       body: JSON.stringify(body),
     });
     const json = await resp.json();
 
-    if (!json || json.status !== 'success') {
+    if (!json || json.status !== "success") {
       return { statusCode: 400, body: JSON.stringify({ ok: false, json }) };
     }
 
@@ -146,12 +149,12 @@ exports.handler = async function (event) {
     // Validate amount, currency, and matching service metadata from tx.
 
     // Example: insert/update purchases table
-    await supabase.from('purchases').insert({
+    await supabase.from("purchases").insert({
       tx_ref: tx.tx_ref || tx_ref,
       transaction_id: tx.id || transaction_id,
       amount: tx.amount || tx.amount_paid,
       currency: tx.currency,
-      status: 'confirmed',
+      status: "confirmed",
       metadata: tx,
     });
 
@@ -164,6 +167,7 @@ exports.handler = async function (event) {
 ```
 
 Notes:
+
 - Replace `verifyUrl` as per Flutterwave docs (they have different endpoints per region/version). Use the docs for current endpoints.
 - Use `SUPABASE_SERVICE_ROLE_KEY` in server code only (never in client bundles).
 - Validate `amount` and `currency` match expected product price to prevent spoofed transactions.
@@ -188,22 +192,27 @@ Netlify function example (simplified):
 
 ```javascript
 // netlify/functions/deliver-pdf.js
-const sgMail = require('@sendgrid/mail');
-const { createClient } = require('@supabase/supabase-js');
+const sgMail = require("@sendgrid/mail");
+const { createClient } = require("@supabase/supabase-js");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 exports.handler = async (event) => {
   const { purchaseId, pdfPath, userEmail } = JSON.parse(event.body);
   // Create a signed URL
-  const { data, error } = await supabase.storage.from('pdfs').createSignedUrl(pdfPath, 60 * 60 * 24); // 24 hrs
+  const { data, error } = await supabase.storage
+    .from("pdfs")
+    .createSignedUrl(pdfPath, 60 * 60 * 24); // 24 hrs
   if (error) return { statusCode: 500, body: JSON.stringify(error) };
 
   const msg = {
     to: userEmail,
-    from: 'no-reply@yourdomain.com',
-    subject: 'Your purchased plan',
+    from: "no-reply@yourdomain.com",
+    subject: "Your purchased plan",
     html: `<p>Thanks — download your plan here: <a href="${data.signedUrl}">Download</a></p>`,
   };
   await sgMail.send(msg);
@@ -230,13 +239,16 @@ npm run dev
 ```
 
 3. Test forms:
+
 - Open the site locally and submit Contact, One-time Intake and Assessment forms. Confirm records appear in Supabase tables and Formspree emails arrive (if configured).
 
 4. Test payments (Flutterwave sandbox):
+
 - Obtain test `FLUTTERWAVE_PUBLIC_KEY` and `FLUTTERWAVE_SECRET_KEY` from dashboard.
 - Use the client flow in `src/components/ServicePurchase.tsx` to run a sandbox transaction. Use the verify function to validate and mark `purchases` as confirmed.
 
 5. Test PDF delivery:
+
 - After confirming a purchase, run the deliver function (or allow webhook to trigger it) and confirm the user receives the signed download link via email.
 
 ---
