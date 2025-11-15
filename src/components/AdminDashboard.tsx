@@ -42,6 +42,8 @@ import logo from "@/assets/ssf-logo.jpg";
 import BookingManager from "./BookingManager";
 import ConsultationManager from "./ConsultationManager";
 import ServicePlanManager from "./ServicePlanManager";
+import ServicesManagement from "./ServicesManagement";
+import ResourcesManager from "./ResourcesManager";
 
 interface AdminDashboardProps {
   user: any;
@@ -1602,7 +1604,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
               <TabsTrigger value="sessions" className="whitespace-nowrap">Sessions</TabsTrigger>
-              <TabsTrigger value="services" className="whitespace-nowrap">Services</TabsTrigger>
+              <TabsTrigger value="services-mgmt" className="whitespace-nowrap">Plans/Services</TabsTrigger>
+              <TabsTrigger value="resources" className="whitespace-nowrap">Resources</TabsTrigger>
+              <TabsTrigger value="services" className="whitespace-nowrap">Client Plans</TabsTrigger>
               <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
               <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
               <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
@@ -2495,6 +2499,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="services-mgmt" className="space-y-6 w-full overflow-x-hidden">
+            <ServicesManagement />
+          </TabsContent>
+
+          <TabsContent value="resources" className="space-y-6 w-full overflow-x-hidden">
+            <ResourcesManager />
           </TabsContent>
 
           <TabsContent value="assessments" className="space-y-6 w-full overflow-x-hidden">

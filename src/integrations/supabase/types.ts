@@ -432,7 +432,9 @@ export type Database = {
         Row: {
           amount: number
           created_at: string | null
+          expires_at: string | null
           id: string
+          is_active: boolean | null
           payment_method: string | null
           payment_status: string
           purchased_at: string | null
@@ -443,7 +445,9 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string | null
+          expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           payment_method?: string | null
           payment_status?: string
           purchased_at?: string | null
@@ -454,7 +458,9 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string | null
+          expires_at?: string | null
           id?: string
+          is_active?: boolean | null
           payment_method?: string | null
           payment_status?: string
           purchased_at?: string | null
@@ -471,6 +477,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      resources: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       service_plans: {
         Row: {
@@ -541,6 +583,45 @@ export type Database = {
           },
           {
             foreignKeyName: "service_plans_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_resources: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          resource_id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          resource_id: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          resource_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_resources_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_resources_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"

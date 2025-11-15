@@ -10,14 +10,14 @@ import { ArrowLeft } from "lucide-react";
 interface Service {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   type: string;
   price: number;
-  duration_weeks?: number;
-  duration_minutes?: number;
-  includes_nutrition: boolean;
-  includes_workout: boolean;
-  includes_meet: boolean;
+  duration_weeks?: number | null;
+  duration_minutes?: number | null;
+  includes_nutrition: boolean | null;
+  includes_workout: boolean | null;
+  includes_meet: boolean | null;
 }
 
 interface ServicesStoreProps {
