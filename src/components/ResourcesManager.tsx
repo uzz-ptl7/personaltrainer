@@ -155,6 +155,31 @@ const ResourcesManager: React.FC = () => {
         title: "Resource uploaded successfully",
       });
 
+      // Notify all users who have purchased services about new resource
+      try {
+        const { data: purchases } = await supabase
+          .from('purchases')
+          .select('user_id')
+          .eq('payment_status', 'completed')
+          .eq('is_active', true);
+
+        if (purchases) {
+          const uniqueUserIds = [...new Set(purchases.map(p => p.user_id))];
+          await Promise.all(uniqueUserIds.map(userId =>
+            supabase.functions.invoke('send-notification', {
+              body: {
+                user_id: userId,
+                title: 'New Resource Available',
+                message: `A new ${resourceType === 'pdf' ? 'PDF' : 'video'} resource "${title}" has been uploaded!`,
+                type: 'info'
+              }
+            })
+          ));
+        }
+      } catch (notifError) {
+        console.error('Error sending notifications:', notifError);
+      }
+
       setIsUploadModalOpen(false);
       resetUploadForm();
       loadData();

@@ -44,6 +44,7 @@ import ConsultationManager from "./ConsultationManager";
 import ServicePlanManager from "./ServicePlanManager";
 import ServicesManagement from "./ServicesManagement";
 import ResourcesManager from "./ResourcesManager";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface AdminDashboardProps {
   user: any;
