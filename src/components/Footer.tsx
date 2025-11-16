@@ -37,18 +37,18 @@ const Footer = () => {
               </h3>
             </div>
             <p className="font-body text-muted-foreground mb-6">
-              Transforming lives through personalized fitness coaching. 
+              Transforming lives through personalized fitness coaching.
               Your journey to a stronger, healthier you starts here.
             </p>
             <div className="space-y-2">
-              <a 
+              <a
                 href="tel:+250789654321"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
                 <Phone className="h-4 w-4 mr-2" />
-                <span className="font-body">+250 789 654 321</span>
+                <span className="font-body">+250 788 624 496</span>
               </a>
-              <a 
+              <a
                 href="mailto:salim@ssf.com"
                 className="flex items-center text-muted-foreground hover:text-primary transition-smooth"
               >
@@ -107,10 +107,10 @@ const Footer = () => {
           </p>
           <p className="font-accent text-primary mt-2 text-lg">
             Made in Rwanda by the{" "}
-            <a 
-              href="https://www.sitecraftersz.co/" 
-              className="underline hover:text-primary-glow transition-smooth" 
-              target="_blank" 
+            <a
+              href="https://www.sitecraftersz.co/"
+              className="underline hover:text-primary-glow transition-smooth"
+              target="_blank"
               rel="noopener noreferrer"
             >
               Sitecrafters Team
