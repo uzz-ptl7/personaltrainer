@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save, FileText, Eye } from "lucide-react";
+import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save, FileText, Eye, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ServicesStore from "./ServicesStore";
 import AdminDashboard from "./AdminDashboard";
 import logo from "@/assets/ssf-logo.jpg";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface DashboardProps {
   user: any;

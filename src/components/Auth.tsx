@@ -183,6 +183,41 @@ const Auth = ({ onAuthChange }: AuthProps) => {
           description: error.message,
         });
       } else {
+        // Send welcome notification to new user
+        if (data.user) {
+          try {
+            await supabase.functions.invoke('send-notification', {
+              body: {
+                user_id: data.user.id,
+                title: 'Welcome to SSF!',
+                message: 'Thank you for joining us. Complete your fitness assessment to get started!',
+                type: 'success'
+              }
+            });
+
+            // Notify admin about new signup
+            const { data: adminProfiles } = await supabase
+              .from('profiles')
+              .select('user_id')
+              .eq('is_admin', true);
+
+            if (adminProfiles) {
+              await Promise.all(adminProfiles.map(admin =>
+                supabase.functions.invoke('send-notification', {
+                  body: {
+                    user_id: admin.user_id,
+                    title: 'New User Signup',
+                    message: `${fullName} (${email}) just signed up!`,
+                    type: 'info'
+                  }
+                })
+              ));
+            }
+          } catch (notifError) {
+            console.error('Error sending notification:', notifError);
+          }
+        }
+
         toast({
           title: "Account Created!",
           description: "Please check your email to verify your account. After verification, you'll be redirected to complete your fitness assessment.",

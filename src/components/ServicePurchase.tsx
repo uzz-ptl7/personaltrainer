@@ -169,6 +169,38 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
 
       if (updateError) throw updateError;
 
+      // Send notifications
+      try {
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            user_id: user?.id,
+            title: 'Purchase Successful',
+            message: `You have successfully purchased ${service.title}. Check your dashboard for details.`,
+            type: 'success'
+          }
+        });
+
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('is_admin', true);
+
+        if (adminProfiles) {
+          await Promise.all(adminProfiles.map(admin =>
+            supabase.functions.invoke('send-notification', {
+              body: {
+                user_id: admin.user_id,
+                title: 'New Purchase',
+                message: `${user?.email} purchased ${service.title} (₦${service.price.toLocaleString()})`,
+                type: 'success'
+              }
+            })
+          ));
+        }
+      } catch (notifError) {
+        console.error('Error sending notifications:', notifError);
+      }
+
       toast({
         title: "Purchase Successful!",
         description: "Your service has been added to your dashboard.",
