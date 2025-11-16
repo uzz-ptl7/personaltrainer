@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ interface PlansSectionProps {
 const PlansSection = ({ onAuthRequest, isAuthenticated }: PlansSectionProps) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadPlans();
@@ -133,7 +135,7 @@ const PlansSection = ({ onAuthRequest, isAuthenticated }: PlansSectionProps) => 
                   </div>
 
                   <Button 
-                    onClick={onAuthRequest}
+                    onClick={() => isAuthenticated ? navigate('/dashboard') : onAuthRequest()}
                     className="w-full"
                   >
                     {isAuthenticated ? 'View in Dashboard' : 'Sign Up to Purchase'}
