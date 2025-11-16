@@ -71,6 +71,8 @@ interface Purchase {
   amount: number;
   payment_status: string;
   purchased_at: string;
+  expires_at: string | null;
+  is_active: boolean | null;
   service: {
     title: string;
     type: string;
@@ -323,6 +325,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
     return services.filter(service =>
       clientPurchases.some(purchase => purchase.service_id === service.id)
     );
+  };
+
+  // Helper function to toggle renewal status for plans
+  const toggleRenewal = async (purchaseId: string, currentIsActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('purchases')
+        .update({ is_active: !currentIsActive })
+        .eq('id', purchaseId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Purchase ${!currentIsActive ? 'renewed' : 'deactivated'} successfully`,
+      });
+
+      loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update renewal status",
+        variant: "destructive",
+      });
+    }
   };
 
   // Temporary helper function to update purchase status
@@ -1985,9 +2012,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             <p className="text-xs text-muted-foreground">
                               Purchased: {formatDate(purchase.purchased_at)} • ID: {purchase.id.slice(0, 8)}...
                             </p>
+                            {purchase.expires_at && (
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(purchase.expires_at) > new Date() ? 'Expires' : 'Expired'}: {formatDate(purchase.expires_at)}
+                                {purchase.is_active === false && ' (Inactive)'}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Renewal toggle for plans only */}
+                          {['recurring', 'one-time', 'downloadable'].includes(purchase.service?.type) && (
+                            <Button
+                              size="sm"
+                              variant={purchase.is_active ? 'default' : 'outline'}
+                              onClick={() => toggleRenewal(purchase.id, purchase.is_active || false)}
+                              title={purchase.is_active ? 'Deactivate' : 'Renew'}
+                            >
+                              {purchase.is_active ? 'Active' : 'Renew'}
+                            </Button>
+                          )}
                           <Select
                             value={purchase.payment_status}
                             onValueChange={(newStatus) => updatePurchaseStatus(purchase.id, newStatus as any)}
