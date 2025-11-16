@@ -6,6 +6,7 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import FitnessGallery from "@/components/FitnessGallery";
 import Services from "@/components/Services";
+import PlansSection from "@/components/PlansSection";
 // import Testimonials from "@/components/Testimonials";
 import EmailMarketing from "@/components/EmailMarketing";
 import Contact from "@/components/Contact";
@@ -42,6 +43,7 @@ const Index = ({ onAuthRequest }: IndexProps) => {
         <About />
         <FitnessGallery />
         <Services />
+        <PlansSection onAuthRequest={onAuthRequest} isAuthenticated={!!user} />
         {/* <Testimonials /> */}
         <EmailMarketing />
         <Contact />

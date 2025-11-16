@@ -60,7 +60,8 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
   const servicesByType = {
     program: services.filter(s => s.type === 'program'),
     consultation: services.filter(s => s.type === 'consultation'),
-    session: services.filter(s => s.type === 'session')
+    session: services.filter(s => s.type === 'session'),
+    plans: services.filter(s => ['recurring', 'one-time', 'downloadable'].includes(s.type))
   };
 
   if (loading) {
@@ -94,10 +95,11 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="programs" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="programs">Training Programs</TabsTrigger>
             <TabsTrigger value="consultations">Consultations</TabsTrigger>
             <TabsTrigger value="sessions">Personal Sessions</TabsTrigger>
+            <TabsTrigger value="plans">Plans</TabsTrigger>
           </TabsList>
 
           <TabsContent value="programs" className="mt-8">
@@ -148,6 +150,28 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Plans Tab */}
+        <div className="mt-12">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-bold text-foreground mb-2">Customized & Pre-Made Plans</h3>
+            <p className="text-muted-foreground">Choose from recurring programs, one-time customized plans, or downloadable resources</p>
+          </div>
+
+          {servicesByType.plans.length === 0 ? (
+            <Card className="bg-gradient-card border-border">
+              <CardContent className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">No plans available at the moment.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {servicesByType.plans.map((service) => (
+                <ServicePurchase key={service.id} service={service} user={user} />
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mt-12 text-center">
           <Card className="bg-gradient-card border-border max-w-2xl mx-auto">

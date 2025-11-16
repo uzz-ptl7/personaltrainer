@@ -54,6 +54,23 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
     setLoading(true);
 
     try {
+      // Calculate expiry date based on service type
+      let expiresAt: string | null = null;
+      let isActive = true;
+
+      if (service.type === 'recurring' && service.duration_weeks) {
+        // Recurring plans expire after duration
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + (service.duration_weeks * 7));
+        expiresAt = expiryDate.toISOString();
+      } else if (service.type === 'program' && service.duration_weeks) {
+        // Programs expire after duration
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + (service.duration_weeks * 7));
+        expiresAt = expiryDate.toISOString();
+      }
+      // one-time and downloadable services don't expire (lifetime access)
+
       // Create purchase record (pending)
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchases')
@@ -62,7 +79,9 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
           service_id: service.id,
           amount: service.price,
           payment_method: paymentMethod,
-          payment_status: 'pending'
+          payment_status: 'pending',
+          expires_at: expiresAt,
+          is_active: isActive
         })
         .select()
         .single();

@@ -28,10 +28,13 @@ interface Purchase {
     includes_meet: boolean;
     includes_nutrition: boolean;
     includes_workout: boolean;
+    duration_weeks: number | null;
   };
   amount: number;
   payment_status: string;
   purchased_at: string;
+  expires_at: string | null;
+  is_active: boolean | null;
 }
 
 interface Booking {
@@ -495,7 +498,56 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                             </div>
                           </CardHeader>
                           <CardContent>
-                            ...
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Status:</span>
+                                <Badge variant={purchase.payment_status === 'completed' ? 'default' : 'secondary'}>
+                                  {purchase.payment_status}
+                                </Badge>
+                              </div>
+                              
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Purchased:</span>
+                                <span>{formatDate(purchase.purchased_at)}</span>
+                              </div>
+
+                              {/* Show expiry for time-based plans */}
+                              {purchase.expires_at && ['recurring', 'one-time', 'program'].includes(purchase.service.type) && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    {purchase.is_active && new Date(purchase.expires_at) > new Date() ? 'Expires:' : 'Expired:'}
+                                  </span>
+                                  <span className={new Date(purchase.expires_at) < new Date() ? 'text-destructive' : 'text-foreground'}>
+                                    {formatDate(purchase.expires_at)}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Lifetime access indicator for one-time non-expiring and downloadables */}
+                              {(!purchase.expires_at || purchase.service.type === 'downloadable') && (
+                                <div className="flex items-center gap-2 text-sm text-primary">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>Lifetime Access</span>
+                                </div>
+                              )}
+
+                              {/* Resources button - check if service has resources */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-2"
+                                onClick={() => {
+                                  // Navigate to resources for this purchase
+                                  const resourcesSection = document.querySelector('[data-tab="resources"]');
+                                  if (resourcesSection) {
+                                    (resourcesSection as HTMLElement).click();
+                                  }
+                                }}
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                View Resources & Plans
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
