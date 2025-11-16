@@ -1527,16 +1527,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               { id: 'clients', label: 'Clients', icon: Users },
               { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
               { id: 'sessions', label: 'Sessions', icon: CalendarIcon },
-              { id: 'plans', label: 'Plans', icon: DollarSign },
+              { id: 'plans', label: 'Plans & Requests', icon: FileText },
               { id: 'services-mgmt', label: 'Services', icon: DollarSign },
               { id: 'resources', label: 'Resources', icon: FileText },
               { id: 'assessments', label: 'Fitness Assessments', icon: Activity },
               { id: 'testimonials', label: 'Testimonials', icon: Video },
               { id: 'newsletter', label: 'Newsletter', icon: Mail },
               { id: 'contacts', label: 'Contacts', icon: Mail },
-              { id: 'one_time_requests', label: 'One-time Requests', icon: FileText },
               { id: 'consultations', label: 'Consultations', icon: Clock },
-              { id: 'dietplans', label: 'Service Plans', icon: FileText },
             ].map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -1559,35 +1557,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           </div>
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
-          <div className="flex items-center justify-center pb-2">
-            <NotificationCenter userId={user.id} />
-          </div>
-          <Button
-            onClick={() => window.location.href = '/'}
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-          >
-            <Home className="h-5 w-5 mr-3" />
-            Home
-          </Button>
-          <Button
-            onClick={onSignOut}
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            Sign Out
-          </Button>
-        </div>
+        {/* Sidebar Footer removed - moved to header for global access */}
       </div>
 
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 h-auto">
+            <div className="flex items-center space-x-3 flex-wrap">
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
@@ -1605,10 +1582,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               </div>
             </div>
 
-            {/* Desktop Navigation Buttons */}
-            <div className="hidden lg:flex items-center space-x-3">
+            {/* Global Navigation Buttons (visible on all sizes) */}
+            <div className="flex items-center space-x-3">
               <NotificationCenter userId={user.id} />
               <Button
+                type="button"
                 onClick={() => window.location.href = '/'}
                 variant="outline"
                 className="border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -1617,6 +1595,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 Home
               </Button>
               <Button
+                type="button"
                 onClick={onSignOut}
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
@@ -1632,6 +1611,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 w-full overflow-hidden">
+          {/* Mobile navigation is handled by the sidebar; no mobile TabsList to avoid duplication */}
+
           {/* Desktop Tabs */}
           <div className="hidden lg:block w-full overflow-x-auto">
             {/* Use inline-flex so tabs scroll horizontally cleanly on smaller desktop widths */}
@@ -1640,16 +1621,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
               <TabsTrigger value="sessions" className="whitespace-nowrap">Sessions</TabsTrigger>
-              <TabsTrigger value="plans" className="whitespace-nowrap">Plans</TabsTrigger>
+              <TabsTrigger value="plans" className="whitespace-nowrap">Plans & Requests</TabsTrigger>
               <TabsTrigger value="services-mgmt" className="whitespace-nowrap">Services</TabsTrigger>
               <TabsTrigger value="resources" className="whitespace-nowrap">Resources</TabsTrigger>
               <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
               <TabsTrigger value="testimonials" className="whitespace-nowrap">Testimonials</TabsTrigger>
               <TabsTrigger value="newsletter" className="whitespace-nowrap">Newsletter</TabsTrigger>
               <TabsTrigger value="contacts" className="whitespace-nowrap">Contacts</TabsTrigger>
-              <TabsTrigger value="one_time_requests" className="whitespace-nowrap">One-time Requests</TabsTrigger>
               <TabsTrigger value="consultations" className="whitespace-nowrap">Consultations</TabsTrigger>
-              <TabsTrigger value="dietplans" className="whitespace-nowrap">Service Plans</TabsTrigger>
             </TabsList>
           </div>
 
@@ -1847,19 +1826,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="one_time_requests" className="space-y-6 w-full overflow-x-hidden">
+          <TabsContent value="plans" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  One-time Requests
+                  Plans & Requests
                 </CardTitle>
-                <CardDescription>Custom plan requests submitted by buyers</CardDescription>
+                <CardDescription>Service plans and custom one-time requests in one place</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 flex gap-2">
-                  <Button onClick={exportOneTimeRequests} className="mr-2">Export to Excel</Button>
+                <div className="mb-4">
+                  <ServicePlanManager currentUserId={user?.id} />
                 </div>
+
+                <div className="mb-4 flex gap-2">
+                  <Button onClick={exportOneTimeRequests} className="mr-2">Export Requests to Excel</Button>
+                </div>
+
                 <div className="space-y-3">
                   {oneTimeRequests.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">No requests found.</p>
@@ -2696,9 +2680,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             <ConsultationManager clients={clients} />
           </TabsContent>
 
-          <TabsContent value="dietplans" className="space-y-6 w-full overflow-x-hidden">
-            <ServicePlanManager currentUserId={user?.id} />
-          </TabsContent>
+          {/* `dietplans` content merged into `plans` above */}
         </Tabs>
       </div>
     </div>

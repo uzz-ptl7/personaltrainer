@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save, FileText, Eye, Bell } from "lucide-react";
+import { Calendar, Download, LogOut, Video, User as UserIcon, Clock, CheckCircle, ShoppingBag, ExternalLink, Mail, Phone, MessageCircle, Activity, Edit, Save, FileText, Eye, Bell, Menu, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -177,6 +178,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   const [showServicesStore, setShowServicesStore] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("services");
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadUserData();
@@ -290,20 +294,57 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   };
 
   const handleSignOut = async () => {
-    // Update user's offline status
-    await supabase
-      .from('profiles')
-      .update({
-        is_online: false,
-        last_seen: new Date().toISOString()
-      })
-      .eq('user_id', user.id);
+    console.log('handleSignOut invoked for user:', user?.id || user?.email);
+    try {
+      // Update user's offline status (best-effort)
+      await supabase
+        .from('profiles')
+        .update({
+          is_online: false,
+          last_seen: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+    } catch (err) {
+      console.error('Error updating profile online status before sign out:', err);
+    }
 
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-    } else {
-      onSignOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+      }
+    } catch (err) {
+      console.error('Sign out threw an exception:', err);
+    } finally {
+      // Ensure local app state is cleared even if sign-out failed at the network level
+      try {
+        onSignOut();
+      } catch (err) {
+        console.error('Error calling onSignOut:', err);
+      }
+      // Remove common Supabase localStorage/session keys to ensure a clean sign-out
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          const lower = key.toLowerCase();
+          if (lower.includes('supabase') || lower.includes('sb-') || lower.includes('sb:') || lower.includes('supabase.auth') || lower.includes('sb:token') || lower.includes('supabase:')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      } catch (err) {
+        console.error('Error clearing localStorage during sign out:', err);
+      }
+
+      // Navigate to home to ensure we leave /dashboard and render the logged-out app
+      try {
+        navigate('/', { replace: true });
+      } catch (err) {
+        // Fallback: full page redirect
+        window.location.replace('/');
+      }
     }
   };
 
@@ -389,7 +430,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
             <div>
@@ -397,12 +438,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               <p className="text-sm text-muted-foreground">Welcome back, {profile?.full_name || user.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
             <NotificationCenter userId={user.id} />
-            <Button onClick={() => window.location.href = '/'} variant="ghost" size="sm">
+            <Button type="button" onClick={() => window.location.href = '/'} variant="ghost" size="sm">
               Home
             </Button>
-            <Button onClick={handleSignOut} variant="outline" size="sm">
+            <Button type="button" onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
@@ -414,7 +463,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
       {!fitnessAssessment && (
         <div className="bg-gradient-to-r from-gray-400 to-gray-300 border-b-[5px] border-orange-700">
           <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Activity className="h-5 w-5 text-orange-600" />
                 <div>
@@ -426,7 +475,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   onClick={() => {
                     const whatsappMessage = "Hi! I need help completing my fitness assessment. Could we schedule a meeting to go through it together?";
@@ -454,9 +503,57 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
         </div>
       )}
 
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <div className={`fixed left-0 top-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out lg:hidden flex flex-col ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <img src={logo} alt="SSF Logo" className="h-8 w-8 rounded-full object-cover" />
+              <div>
+                <h1 className="font-heading font-bold text-sm text-foreground">Dashboard</h1>
+                <p className="text-xs text-muted-foreground">Your Account</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileSidebarOpen(false)}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-2">
+            {[
+              { id: 'services', label: 'My Services' },
+              { id: 'sessions', label: 'Upcoming Sessions' },
+              { id: 'dietplans', label: 'My Plans' },
+              { id: 'assessment', label: 'Fitness Assessment' },
+              { id: 'profile', label: 'Profile' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+              >
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="services" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="hidden lg:grid w-full grid-cols-5 gap-2">
             <TabsTrigger value="services">My Services</TabsTrigger>
             <TabsTrigger value="sessions">Upcoming Sessions</TabsTrigger>
             <TabsTrigger value="dietplans">My Plans</TabsTrigger>
@@ -508,7 +605,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                                   {purchase.payment_status}
                                 </Badge>
                               </div>
-                              
+
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Purchased:</span>
                                 <span>{formatDate(purchase.purchased_at)}</span>
