@@ -57,6 +57,7 @@ const ServicesManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .not('type', 'in', '(recurring,one-time,downloadable)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -222,9 +223,6 @@ const ServicesManagement: React.FC = () => {
       'consultation': 'bg-blue-500/10 text-blue-400 border-blue-500/30',
       'session': 'bg-purple-500/10 text-purple-400 border-purple-500/30',
       'program': 'bg-green-500/10 text-green-400 border-green-500/30',
-      'recurring': 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-      'one-time': 'bg-pink-500/10 text-pink-400 border-pink-500/30',
-      'downloadable': 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
     };
     return colors[type] || 'bg-gray-500/10 text-gray-400 border-gray-500/30';
   };
@@ -237,8 +235,8 @@ const ServicesManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Plans & Services Management</h2>
-          <p className="text-muted-foreground">Create and manage service offerings</p>
+          <h2 className="text-2xl font-bold">Services Management</h2>
+          <p className="text-muted-foreground">Create and manage one-time services (consultations, sessions, programs)</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
           <Plus className="mr-2 h-4 w-4" />
@@ -363,13 +361,10 @@ const ServicesManagement: React.FC = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border-border">
                     <SelectItem value="consultation">Consultation</SelectItem>
                     <SelectItem value="session">Session</SelectItem>
                     <SelectItem value="program">Program</SelectItem>
-                    <SelectItem value="recurring">Recurring</SelectItem>
-                    <SelectItem value="one-time">One-Time</SelectItem>
-                    <SelectItem value="downloadable">Downloadable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
