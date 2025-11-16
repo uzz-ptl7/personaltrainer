@@ -1562,48 +1562,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 h-auto">
-            <div className="flex items-center space-x-3 flex-wrap">
-              {/* Mobile Menu Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden"
-                onClick={() => setIsMobileSidebarOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-
-              <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
-              <div>
-                <h1 className="font-heading font-bold lg:text-xl text-lg text-foreground">Admin Dashboard</h1>
-                <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
-              </div>
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <img src={logo} alt="SSF Logo" className="h-10 w-10 rounded-full object-cover" />
+            <div>
+              <h1 className="text-2xl font-bold text-gradient-primary">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Salim Saleh Fitness</p>
             </div>
-
-            {/* Global Navigation Buttons (visible on all sizes) */}
-            <div className="flex items-center space-x-3">
-              <NotificationCenter userId={user.id} />
-              <Button
-                type="button"
-                onClick={() => window.location.href = '/'}
-                variant="outline"
-                className="border-muted-foreground text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Home className="h-4 w-4 mr-2" />
-                Home
-              </Button>
-              <Button
-                type="button"
-                onClick={onSignOut}
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <NotificationCenter userId={user.id} />
+            <Button
+              type="button"
+              onClick={() => window.location.href = '/'}
+              variant="ghost"
+              size="sm"
+            >
+              Home
+            </Button>
+            <Button
+              type="button"
+              onClick={onSignOut}
+              variant="outline"
+              size="sm"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>
