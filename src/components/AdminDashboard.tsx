@@ -46,6 +46,7 @@ import ServicesManagement from "./ServicesManagement";
 import ResourcesManager from "./ResourcesManager";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationCenter from "./NotificationCenter";
+import PlansManagement from "./PlansManagement";
 
 interface AdminDashboardProps {
   user: any;
@@ -1526,14 +1527,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               { id: 'clients', label: 'Clients', icon: Users },
               { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
               { id: 'sessions', label: 'Sessions', icon: CalendarIcon },
-              { id: 'services', label: 'Services', icon: DollarSign },
+              { id: 'plans', label: 'Plans', icon: DollarSign },
+              { id: 'services-mgmt', label: 'Services', icon: DollarSign },
+              { id: 'resources', label: 'Resources', icon: FileText },
+              { id: 'services', label: 'Client Plans', icon: FileText },
               { id: 'assessments', label: 'Fitness Assessments', icon: Activity },
               { id: 'testimonials', label: 'Testimonials', icon: Video },
               { id: 'newsletter', label: 'Newsletter', icon: Mail },
               { id: 'contacts', label: 'Contacts', icon: Mail },
               { id: 'one_time_requests', label: 'One-time Requests', icon: FileText },
               { id: 'consultations', label: 'Consultations', icon: Clock },
-              { id: 'dietplans', label: 'Diet Plans', icon: FileText },
+              { id: 'dietplans', label: 'Service Plans', icon: FileText },
             ].map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -1637,7 +1641,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
               <TabsTrigger value="clients" className="whitespace-nowrap">Clients</TabsTrigger>
               <TabsTrigger value="purchases" className="whitespace-nowrap">Purchases</TabsTrigger>
               <TabsTrigger value="sessions" className="whitespace-nowrap">Sessions</TabsTrigger>
-              <TabsTrigger value="services-mgmt" className="whitespace-nowrap">Plans/Services</TabsTrigger>
+              <TabsTrigger value="plans" className="whitespace-nowrap">Plans</TabsTrigger>
+              <TabsTrigger value="services-mgmt" className="whitespace-nowrap">Services</TabsTrigger>
               <TabsTrigger value="resources" className="whitespace-nowrap">Resources</TabsTrigger>
               <TabsTrigger value="services" className="whitespace-nowrap">Client Plans</TabsTrigger>
               <TabsTrigger value="assessments" className="whitespace-nowrap">Assessments</TabsTrigger>
@@ -2553,6 +2558,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
           <TabsContent value="services-mgmt" className="space-y-6 w-full overflow-x-hidden">
             <ServicesManagement />
+          </TabsContent>
+
+          <TabsContent value="plans" className="space-y-6 w-full overflow-x-hidden">
+            <PlansManagement />
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-6 w-full overflow-x-hidden">
