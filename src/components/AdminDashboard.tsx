@@ -45,6 +45,7 @@ import ServicePlanManager from "./ServicePlanManager";
 import ServicesManagement from "./ServicesManagement";
 import ResourcesManager from "./ResourcesManager";
 import { useNotifications } from "@/hooks/useNotifications";
+import NotificationCenter from "./NotificationCenter";
 
 interface AdminDashboardProps {
   user: any;
@@ -1557,6 +1558,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
+          <div className="flex items-center justify-center pb-2">
+            <NotificationCenter userId={user.id} />
+          </div>
           <Button
             onClick={() => window.location.href = '/'}
             variant="ghost"
@@ -1600,6 +1604,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
 
             {/* Desktop Navigation Buttons */}
             <div className="hidden lg:flex items-center space-x-3">
+              <NotificationCenter userId={user.id} />
               <Button
                 onClick={() => window.location.href = '/'}
                 variant="outline"

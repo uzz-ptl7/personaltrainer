@@ -13,6 +13,7 @@ import ServicesStore from "./ServicesStore";
 import AdminDashboard from "./AdminDashboard";
 import logo from "@/assets/ssf-logo.jpg";
 import { useNotifications } from "@/hooks/useNotifications";
+import NotificationCenter from "./NotificationCenter";
 
 interface DashboardProps {
   user: any;
@@ -397,6 +398,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationCenter userId={user.id} />
             <Button onClick={() => window.location.href = '/'} variant="ghost" size="sm">
               Home
             </Button>
