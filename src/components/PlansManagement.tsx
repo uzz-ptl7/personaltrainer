@@ -204,14 +204,14 @@ const PlansManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Plans Management</h2>
-          <p className="text-muted-foreground">Create and manage training plans</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold text-foreground break-words">Plans Management</h2>
+          <p className="text-muted-foreground text-sm">Create and manage training plans</p>
         </div>
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => handleOpenModal()}>
+            <Button onClick={() => handleOpenModal()} size="sm" className="w-full sm:w-auto flex-shrink-0">
               <Plus className="h-4 w-4 mr-2" />
               Add Plan
             </Button>
@@ -343,21 +343,21 @@ const PlansManagement: React.FC = () => {
             return (
               <Card key={plan.id} className="bg-card border-border">
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-xl">{plan.title}</CardTitle>
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CardTitle className="text-xl break-words">{plan.title}</CardTitle>
                         {!plan.is_active && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs flex-shrink-0">
                             Inactive
                           </Badge>
                         )}
                       </div>
                       {plan.description && (
-                        <CardDescription>{plan.description}</CardDescription>
+                        <CardDescription className="break-words">{plan.description}</CardDescription>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -376,7 +376,7 @@ const PlansManagement: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Type</p>
                       <Badge variant="outline" className={typeConfig.color}>
@@ -401,7 +401,7 @@ const PlansManagement: React.FC = () => {
                     )}
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Includes</p>
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1">
                         {plan.includes_workout && (
                           <Badge variant="outline" className="text-xs">Workout</Badge>
                         )}

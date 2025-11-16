@@ -587,37 +587,37 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       {purchases.map((purchase) => (
                         <Card key={purchase.id} className="bg-gradient-card border-border">
                           <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div>
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
                                 <CardTitle className="text-lg">{purchase.service.title}</CardTitle>
                                 <CardDescription>{purchase.service.description}</CardDescription>
                               </div>
-                              <Badge variant="secondary" className="capitalize">
+                              <Badge variant="secondary" className="capitalize flex-shrink-0">
                                 {purchase.service.type}
                               </Badge>
                             </div>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between text-sm">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm gap-1">
                                 <span className="text-muted-foreground">Status:</span>
                                 <Badge variant={purchase.payment_status === 'completed' ? 'default' : 'secondary'}>
                                   {purchase.payment_status}
                                 </Badge>
                               </div>
 
-                              <div className="flex items-center justify-between text-sm">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm gap-1">
                                 <span className="text-muted-foreground">Purchased:</span>
-                                <span>{formatDate(purchase.purchased_at)}</span>
+                                <span className="break-words">{formatDate(purchase.purchased_at)}</span>
                               </div>
 
                               {/* Show expiry for time-based plans */}
                               {purchase.expires_at && ['recurring', 'one-time', 'program'].includes(purchase.service.type) && (
-                                <div className="flex items-center justify-between text-sm">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm gap-1">
                                   <span className="text-muted-foreground">
                                     {purchase.is_active && new Date(purchase.expires_at) > new Date() ? 'Expires:' : 'Expired:'}
                                   </span>
-                                  <span className={new Date(purchase.expires_at) < new Date() ? 'text-destructive' : 'text-foreground'}>
+                                  <span className={`break-words ${new Date(purchase.expires_at) < new Date() ? 'text-destructive' : 'text-foreground'}`}>
                                     {formatDate(purchase.expires_at)}
                                   </span>
                                 </div>
@@ -687,19 +687,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                     {bookings.map((booking) => (
                       <Card key={booking.id} className="bg-gradient-card border-border">
                         <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">{booking.service.title}</CardTitle>
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg break-words">{booking.service.title}</CardTitle>
                               <div className="flex items-center gap-2 mt-1">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <p className="text-sm text-muted-foreground break-words">
                                   {formatDate(booking.scheduled_at)}
                                 </p>
                               </div>
                             </div>
                             <Badge
                               variant={booking.status === 'scheduled' ? 'default' : 'secondary'}
-                              className="capitalize"
+                              className="capitalize flex-shrink-0"
                             >
                               {booking.status}
                             </Badge>
@@ -735,19 +735,19 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                     {consultations.map((consultation) => (
                       <Card key={consultation.id} className="bg-gradient-card border-border">
                         <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg">Consultation ({consultation.consultation_type.replace('_', ' ')})</CardTitle>
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg break-words">Consultation ({consultation.consultation_type.replace('_', ' ')})</CardTitle>
                               <div className="flex items-center gap-2 mt-1">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <p className="text-sm text-muted-foreground break-words">
                                   {formatDate(consultation.scheduled_at)}
                                 </p>
                               </div>
                             </div>
                             <Badge
                               variant={consultation.status === 'scheduled' ? 'default' : 'secondary'}
-                              className="capitalize"
+                              className="capitalize flex-shrink-0"
                             >
                               {consultation.status}
                             </Badge>
@@ -807,20 +807,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       return (
                         <Card key={plan.id} className={`bg-gradient-to-r ${config.bgColor} ${config.borderColor} shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm`}>
                           <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                              <div className="flex-1 min-w-0">
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <FileText className={`h-5 w-5 ${config.iconColor}`} />
-                                  {plan.title}
+                                  <FileText className={`h-5 w-5 ${config.iconColor} flex-shrink-0`} />
+                                  <span className="break-words">{plan.title}</span>
                                 </CardTitle>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                  <p className="text-sm text-muted-foreground">
+                                  <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <p className="text-sm text-muted-foreground break-words">
                                     Uploaded: {new Date(plan.created_at || '').toLocaleDateString()}
                                   </p>
                                 </div>
                               </div>
-                              <Badge className={config.badgeColor}>
+                              <Badge className={`${config.badgeColor} flex-shrink-0`}>
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 {config.label}
                               </Badge>
@@ -833,13 +833,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                               </p>
                             )}
 
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm mb-4">
-                              <span className="flex items-center gap-1">
-                                <FileText className="h-4 w-4" />
-                                {plan.file_name}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm mb-4">
+                              <span className="flex items-center gap-1 break-all">
+                                <FileText className="h-4 w-4 flex-shrink-0" />
+                                <span className="break-all">{plan.file_name}</span>
                               </span>
                               {plan.file_size && (
-                                <span>
+                                <span className="flex-shrink-0">
                                   Size: {(plan.file_size / (1024 * 1024)).toFixed(2)} MB
                                 </span>
                               )}
@@ -868,16 +868,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
           <TabsContent value="assessment" className="mt-8">
             <div className="grid gap-6">
               <div>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                   <h2 className="text-xl font-semibold">Fitness Assessment</h2>
                   {fitnessAssessment && !isEditingAssessment && (
-                    <Button onClick={handleEditAssessment} variant="outline">
+                    <Button onClick={handleEditAssessment} variant="outline" size="sm">
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Assessment
                     </Button>
                   )}
                   {isEditingAssessment && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button onClick={handleSaveAssessment} size="sm">
                         <Save className="h-4 w-4 mr-2" />
                         Save Changes
@@ -925,7 +925,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {/* Basic Metrics */}
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">Weight (KG)</p>
@@ -1174,29 +1174,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Name</p>
-                  <p className="font-medium text-foreground">{profile?.full_name || 'Not provided'}</p>
+                  <p className="font-medium text-foreground break-words">{profile?.full_name || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium text-foreground">{user.email}</p>
+                  <p className="font-medium text-foreground break-words">{user.email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium text-foreground break-words">
                     {profile?.phone ? `${profile?.phone_country_code} ${profile?.phone}` : 'Not provided'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Country</p>
-                  <p className="font-medium text-foreground">{profile?.country || 'Not provided'}</p>
+                  <p className="font-medium text-foreground break-words">{profile?.country || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">How you heard about us</p>
-                  <p className="font-medium text-foreground">{profile?.referral_source || 'Not provided'}</p>
+                  <p className="font-medium text-foreground break-words">{profile?.referral_source || 'Not provided'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Member since</p>
-                  <p className="font-medium text-foreground">
+                  <p className="font-medium text-foreground break-words">
                     {formatDate(user.created_at)}
                   </p>
                 </div>

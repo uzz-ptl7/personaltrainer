@@ -1705,7 +1705,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
             </div>
 
             {/* Recent Activities */}
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-gradient-card border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1718,10 +1718,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     {notifications.slice(0, 5).map((notification) => (
                       <div key={notification.id} className={`p-3 rounded-lg border ${notification.is_read ? 'bg-muted/50' : 'bg-primary/5 border-primary/20'
                         }`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-foreground">{notification.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-foreground break-words">{notification.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1 break-words">{notification.message}</p>
                             <p className="text-xs text-muted-foreground mt-2">
                               {formatDate(notification.created_at)}
                             </p>
@@ -1730,6 +1730,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="w-full sm:w-auto flex-shrink-0"
                               onClick={() => markNotificationRead(notification.id)}
                             >
                               Mark Read
@@ -1756,16 +1757,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   <div className="space-y-3">
                     {upcomingSessions.slice(0, 5).map((session) => (
                       <div key={session.id} className="p-3 border border-border rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-foreground">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground break-words">
                               {session.profiles?.full_name || 'Unknown Client'}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground break-words">
                               {session.service.title} • {formatDate(session.scheduled_at)}
                             </p>
                           </div>
-                          <Badge className={getStatusColor(session.status)}>
+                          <Badge className={`${getStatusColor(session.status)} flex-shrink-0`}>
                             {session.status}
                           </Badge>
                         </div>
@@ -1790,22 +1791,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 <CardDescription>Messages submitted via the contact form</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 flex gap-2">
-                  <Button onClick={exportContacts} className="mr-2">Export to Excel</Button>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <Button onClick={exportContacts} size="sm">Export to Excel</Button>
                 </div>
                 <div className="space-y-3">
                   {contacts.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">No contacts found.</p>
                   ) : (
                     contacts.map((c) => (
-                      <div key={c.id} className="p-4 border border-border rounded-lg flex justify-between items-start gap-4">
-                        <div>
-                          <h4 className="font-medium text-foreground">{c.name} {c.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
-                          <p className="text-sm text-muted-foreground">{c.email} • {c.phone}</p>
-                          <p className="text-sm text-muted-foreground mt-2">{c.message}</p>
+                      <div key={c.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground break-words">{c.name} {c.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
+                          <p className="text-sm text-muted-foreground break-words">{c.email} • {c.phone}</p>
+                          <p className="text-sm text-muted-foreground mt-2 break-words">{c.message}</p>
                           <p className="text-xs text-muted-foreground mt-2">Submitted: {formatDate(c.created_at)}</p>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 w-full sm:w-auto">
                           <Button size="sm" variant={c.processed ? 'outline' : 'default'} onClick={() => toggleProcessedContact(c.id, !c.processed)}>
                             {c.processed ? 'Mark Unprocessed' : 'Mark Processed'}
                           </Button>
@@ -1833,8 +1834,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   <ServicePlanManager currentUserId={user?.id} />
                 </div>
 
-                <div className="mb-4 flex gap-2">
-                  <Button onClick={exportOneTimeRequests} className="mr-2">Export Requests to Excel</Button>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <Button onClick={exportOneTimeRequests} size="sm">Export Requests to Excel</Button>
                 </div>
 
                 <div className="space-y-3">
@@ -1842,15 +1843,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     <p className="text-center text-muted-foreground py-8">No requests found.</p>
                   ) : (
                     oneTimeRequests.map((r) => (
-                      <div key={r.id} className="p-4 border border-border rounded-lg flex justify-between items-start gap-4">
-                        <div>
-                          <h4 className="font-medium text-foreground">{r.name} {r.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
-                          <p className="text-sm text-muted-foreground">{r.email} • {r.fitness_level}</p>
-                          <p className="text-sm text-muted-foreground mt-2">Goal: {r.goal}</p>
-                          {r.notes && <p className="text-sm text-muted-foreground mt-2">Notes: {r.notes}</p>}
+                      <div key={r.id} className="p-4 border border-border rounded-lg flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground break-words">{r.name} {r.processed ? <Badge className="ml-2">Processed</Badge> : null}</h4>
+                          <p className="text-sm text-muted-foreground break-words">{r.email} • {r.fitness_level}</p>
+                          <p className="text-sm text-muted-foreground mt-2 break-words">Goal: {r.goal}</p>
+                          {r.notes && <p className="text-sm text-muted-foreground mt-2 break-words">Notes: {r.notes}</p>}
                           <p className="text-xs text-muted-foreground mt-2">Submitted: {formatDate(r.created_at)}</p>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 w-full sm:w-auto">
                           <Button size="sm" variant={r.processed ? 'outline' : 'default'} onClick={() => toggleProcessedOneTimeRequest(r.id, !r.processed)}>
                             {r.processed ? 'Mark Unprocessed' : 'Mark Processed'}
                           </Button>
@@ -1898,7 +1899,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                         <a
                           href={`mailto:${client.email}`}
                           className="p-2 text-muted-foreground hover:text-primary transition-smooth"
@@ -2006,7 +2007,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                           {/* Renewal toggle for plans only */}
                           {['recurring', 'one-time', 'downloadable'].includes(purchase.service?.type) && (
                             <Button
@@ -2208,14 +2209,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
           <TabsContent value="newsletter" className="space-y-6 w-full overflow-x-hidden">
             <Card className="bg-gradient-card border-border">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Mail className="h-5 w-5" />
                     Newsletter Subscribers ({newsletterSubscribers.length})
                   </div>
                   <Button
                     onClick={exportNewsletterSubscribers}
-                    className="bg-gradient-primary hover:shadow-primary"
+                    className="bg-gradient-primary hover:shadow-primary w-full sm:w-auto"
+                    size="sm"
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Export to Excel
@@ -2229,15 +2231,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                   ) : (
                     <div className="grid gap-4">
                       {newsletterSubscribers.map((subscriber) => (
-                        <div key={subscriber.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-card">
-                          <div className="flex-1">
-                            <div className="font-medium text-foreground">{subscriber.name}</div>
-                            <div className="text-sm text-muted-foreground">{subscriber.email}</div>
+                        <div key={subscriber.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-border rounded-lg bg-card gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-foreground break-words">{subscriber.name}</div>
+                            <div className="text-sm text-muted-foreground break-words">{subscriber.email}</div>
                             <div className="text-xs text-muted-foreground mt-1">
                               Subscribed: {new Date(subscriber.subscribed_at).toLocaleDateString()}
                             </div>
                           </div>
-                          <Badge variant={subscriber.is_active ? "default" : "secondary"}>
+                          <Badge variant={subscriber.is_active ? "default" : "secondary"} className="flex-shrink-0">
                             {subscriber.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </div>
@@ -2584,26 +2586,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {pendingTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-start justify-between p-4 border rounded-lg">
-                            <div className="flex-1">
-                              <div className="font-medium">{testimonial.name}</div>
-                              <div className="text-sm text-muted-foreground mb-2">
+                          <div key={testimonial.id} className="flex flex-col sm:flex-row items-start justify-between p-4 border rounded-lg gap-3">
+                            <div className="flex-1 min-w-0 w-full">
+                              <div className="font-medium break-words">{testimonial.name}</div>
+                              <div className="text-sm text-muted-foreground mb-2 break-words">
                                 {testimonial.role} {testimonial.company && `at ${testimonial.company}`} •
                                 Rating: {testimonial.rating}/5 • {new Date(testimonial.created_at).toLocaleDateString()}
                               </div>
-                              <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
+                              <div className="text-sm text-foreground bg-muted p-2 rounded break-words">
                                 "{testimonial.content}"
                               </div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="text-xs text-muted-foreground mt-1 break-words">
                                 Contact: {testimonial.email} • {testimonial.phone}
                                 {testimonial.website && ` • ${testimonial.website}`}
                               </div>
                             </div>
-                            <div className="flex gap-2 ml-4">
+                            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                               <Button
                                 size="sm"
                                 onClick={() => approveTestimonial(testimonial.id)}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-initial"
                               >
                                 <CheckCircle className="h-4 w-4 mr-1" />
                                 Approve
@@ -2612,6 +2614,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => rejectTestimonial(testimonial.id)}
+                                className="flex-1 sm:flex-initial"
                               >
                                 <X className="h-4 w-4 mr-1" />
                                 Reject
@@ -2631,22 +2634,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                     ) : (
                       <div className="space-y-2">
                         {approvedTestimonials.map((testimonial) => (
-                          <div key={testimonial.id} className="flex items-start justify-between p-4 border rounded-lg bg-card/50">
-                            <div className="flex-1">
-                              <div className="font-medium">{testimonial.name}</div>
-                              <div className="text-sm text-muted-foreground mb-2">
+                          <div key={testimonial.id} className="flex flex-col sm:flex-row items-start justify-between p-4 border rounded-lg bg-card/50 gap-3">
+                            <div className="flex-1 min-w-0 w-full">
+                              <div className="font-medium break-words">{testimonial.name}</div>
+                              <div className="text-sm text-muted-foreground mb-2 break-words">
                                 {testimonial.role} {testimonial.company && `at ${testimonial.company}`} •
                                 Rating: {testimonial.rating}/5 • Featured: {testimonial.is_featured ? 'Yes' : 'No'}
                               </div>
-                              <div className="text-sm text-foreground bg-muted p-2 rounded max-w-lg">
+                              <div className="text-sm text-foreground bg-muted p-2 rounded break-words">
                                 "{testimonial.content}"
                               </div>
                             </div>
-                            <div className="flex gap-2 ml-4">
+                            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => toggleFeature(testimonial.id, !testimonial.is_featured)}
+                                className="flex-1 sm:flex-initial"
                               >
                                 {testimonial.is_featured ? 'Unfeature' : 'Feature'}
                               </Button>
@@ -2654,6 +2658,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => deleteTestimonial(testimonial.id)}
+                                className="flex-1 sm:flex-initial"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

@@ -320,14 +320,14 @@ const ResourcesManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Resources Management</h2>
-          <p className="text-muted-foreground">Upload and manage PDFs and videos for your services</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold break-words">Resources Management</h2>
+          <p className="text-muted-foreground text-sm break-words">Upload and manage PDFs and videos for your services</p>
         </div>
         <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button size="sm" className="w-full sm:w-auto flex-shrink-0">
               <Upload className="mr-2 h-4 w-4" />
               Upload Resource
             </Button>
@@ -398,8 +398,8 @@ const ResourcesManager: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 min-w-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -411,7 +411,7 @@ const ResourcesManager: React.FC = () => {
           </div>
         </div>
         <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -439,27 +439,28 @@ const ResourcesManager: React.FC = () => {
             return (
               <Card key={resource.id}>
                 <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-lg bg-primary/10">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <div className="p-3 rounded-lg bg-primary/10 flex-shrink-0">
                       <ResourceIcon className="h-6 w-6 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex flex-col gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg">{resource.title}</h3>
+                          <h3 className="font-semibold text-lg break-words">{resource.title}</h3>
                           {resource.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
+                            <p className="text-sm text-muted-foreground mt-1 break-words">{resource.description}</p>
                           )}
                           <div className="flex flex-wrap gap-2 mt-2">
-                            <Badge variant="outline">{resource.type.toUpperCase()}</Badge>
-                            <Badge variant="outline">{formatFileSize(resource.file_size)}</Badge>
+                            <Badge variant="outline" className="flex-shrink-0">{resource.type.toUpperCase()}</Badge>
+                            <Badge variant="outline" className="flex-shrink-0">{formatFileSize(resource.file_size)}</Badge>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => window.open(resource.file_url, '_blank')}
+                            className="flex-1 sm:flex-initial"
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             View
@@ -471,6 +472,7 @@ const ResourcesManager: React.FC = () => {
                               setSelectedResource(resource);
                               setIsAssignModalOpen(true);
                             }}
+                            className="flex-1 sm:flex-initial"
                           >
                             <LinkIcon className="h-4 w-4 mr-1" />
                             Assign
@@ -479,6 +481,7 @@ const ResourcesManager: React.FC = () => {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDeleteResource(resource.id)}
+                            className="flex-1 sm:flex-initial"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

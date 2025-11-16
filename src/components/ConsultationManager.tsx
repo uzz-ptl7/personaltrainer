@@ -277,15 +277,15 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Consultation Management</h2>
-          <p className="text-muted-foreground">Schedule and manage client consultations</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold text-foreground break-words">Consultation Management</h2>
+          <p className="text-muted-foreground text-sm break-words">Schedule and manage client consultations</p>
         </div>
         
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary">
+            <Button className="bg-gradient-primary w-full sm:w-auto flex-shrink-0" size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Schedule Consultation
             </Button>
@@ -476,11 +476,11 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
           consultations.map((consultation) => (
             <Card key={consultation.id} className="bg-gradient-card border-border shadow-elevation">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <User className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <User className="h-5 w-5 text-primary flex-shrink-0" />
+                      <h3 className="font-semibold text-foreground break-words">
                         {consultation.profiles?.full_name || 'Unknown Client'}
                       </h3>
                       {getStatusBadge(consultation.status || 'scheduled')}
@@ -488,42 +488,43 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
                     
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDateTime(consultation.scheduled_at)}</span>
+                        <Calendar className="h-4 w-4 flex-shrink-0" />
+                        <span className="break-words">{formatDateTime(consultation.scheduled_at)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
+                        <Clock className="h-4 w-4 flex-shrink-0" />
                         <span>{consultation.duration_minutes} minutes</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="flex-shrink-0">
                           {consultation.consultation_type.replace('_', ' ')}
                         </Badge>
                       </div>
                       {consultation.meet_link && (
                         <div className="flex items-center gap-2">
-                          <Video className="h-4 w-4" />
+                          <Video className="h-4 w-4 flex-shrink-0" />
                           <a
                             href={consultation.meet_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary hover:underline"
+                            className="text-primary hover:underline break-all"
                           >
                             Join Meeting
                           </a>
                         </div>
                       )}
                       {consultation.notes && (
-                        <p className="mt-2 text-foreground">{consultation.notes}</p>
+                        <p className="mt-2 text-foreground break-words">{consultation.notes}</p>
                       )}
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => startEditConsultation(consultation)}
+                      className="flex-1 sm:flex-initial"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -531,6 +532,7 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
                       size="sm"
                       variant="destructive"
                       onClick={() => deleteConsultation(consultation.id)}
+                      className="flex-1 sm:flex-initial"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -539,7 +541,7 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
                         <Button
                           size="sm"
                           onClick={() => updateConsultationStatus(consultation.id, 'completed')}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-initial"
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
@@ -547,6 +549,7 @@ const ConsultationManager: React.FC<ConsultationManagerProps> = ({ clients }) =>
                           size="sm"
                           variant="outline"
                           onClick={() => updateConsultationStatus(consultation.id, 'cancelled')}
+                          className="flex-1 sm:flex-initial"
                         >
                           <X className="h-4 w-4" />
                         </Button>

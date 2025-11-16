@@ -233,12 +233,12 @@ const ServicesManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Services Management</h2>
-          <p className="text-muted-foreground">Create and manage one-time services (consultations, sessions, programs)</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold break-words">Services Management</h2>
+          <p className="text-muted-foreground text-sm break-words">Create and manage one-time services (consultations, sessions, programs)</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
+        <Button onClick={() => handleOpenModal()} size="sm" className="w-full sm:w-auto flex-shrink-0">
           <Plus className="mr-2 h-4 w-4" />
           New Service
         </Button>
@@ -256,47 +256,48 @@ const ServicesManagement: React.FC = () => {
           services.map((service) => (
             <Card key={service.id} className={!service.is_active ? 'opacity-60' : ''}>
               <CardContent className="pt-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg">{service.title}</h3>
-                      <Badge variant="outline" className={getServiceTypeColor(service.type)}>
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg break-words">{service.title}</h3>
+                      <Badge variant="outline" className={`${getServiceTypeColor(service.type)} flex-shrink-0`}>
                         {service.type}
                       </Badge>
                       {!service.is_active && (
-                        <Badge variant="secondary">Inactive</Badge>
+                        <Badge variant="secondary" className="flex-shrink-0">Inactive</Badge>
                       )}
                     </div>
                     {service.description && (
-                      <p className="text-sm text-muted-foreground mb-3">{service.description}</p>
+                      <p className="text-sm text-muted-foreground mb-3 break-words">{service.description}</p>
                     )}
                     <div className="flex flex-wrap gap-3 text-sm">
                       <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         <span className="font-medium">${service.price}</span>
                       </div>
                       {service.duration_weeks && service.duration_weeks > 0 && (
                         <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           <span>{service.duration_weeks} weeks</span>
                         </div>
                       )}
                       {service.includes_meet && (
-                        <Badge variant="outline">Includes Meet</Badge>
+                        <Badge variant="outline" className="flex-shrink-0">Includes Meet</Badge>
                       )}
                       {service.includes_nutrition && (
-                        <Badge variant="outline">Nutrition</Badge>
+                        <Badge variant="outline" className="flex-shrink-0">Nutrition</Badge>
                       )}
                       {service.includes_workout && (
-                        <Badge variant="outline">Workout</Badge>
+                        <Badge variant="outline" className="flex-shrink-0">Workout</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => toggleServiceStatus(service.id, service.is_active || false)}
+                      className="flex-1 sm:flex-initial"
                     >
                       {service.is_active ? 'Deactivate' : 'Activate'}
                     </Button>
@@ -304,6 +305,7 @@ const ServicesManagement: React.FC = () => {
                       size="sm"
                       variant="outline"
                       onClick={() => handleOpenModal(service)}
+                      className="flex-1 sm:flex-initial"
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -312,6 +314,7 @@ const ServicesManagement: React.FC = () => {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDeleteService(service.id)}
+                      className="flex-1 sm:flex-initial"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

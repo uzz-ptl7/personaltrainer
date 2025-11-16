@@ -321,15 +321,15 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Service Plan Management</h2>
-          <p className="text-muted-foreground">Upload personalized plans for clients based on consultation outcomes</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold text-foreground break-words">Service Plan Management</h2>
+          <p className="text-muted-foreground text-sm break-words">Upload personalized plans for clients based on consultation outcomes</p>
         </div>
         
         <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary" disabled={completedPurchases.length === 0}>
+            <Button className="bg-gradient-primary w-full sm:w-auto flex-shrink-0" size="sm" disabled={completedPurchases.length === 0}>
               <Plus className="h-4 w-4 mr-2" />
               Upload Service Plan
             </Button>
@@ -426,24 +426,24 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
       {completedPurchases.length > 0 && (
         <Card className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/20">
           <CardHeader>
-            <CardTitle className="text-primary">Available for Service Plans</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-primary break-words">Available for Service Plans</CardTitle>
+            <CardDescription className="break-words">
               Clients with completed service payments ready for personalized plan delivery
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {completedPurchases.map((purchase) => (
-                <div key={purchase.id} className="flex items-center justify-between p-4 bg-card/50 rounded-lg border border-border shadow-sm backdrop-blur-sm">
-                  <div>
-                    <p className="font-medium text-foreground">
+                <div key={purchase.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-card/50 rounded-lg border border-border shadow-sm backdrop-blur-sm gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground break-words">
                       {purchase.profiles?.full_name || 'Unknown Client'}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground break-words">
                       {purchase.profiles?.email} • {purchase.service?.title || 'Unknown Service'}
                     </p>
                   </div>
-                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 flex-shrink-0">
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Payment Completed
                   </Badge>
@@ -471,44 +471,44 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
           return (
             <Card key={plan.id} className="bg-gradient-to-r from-slate-500/5 to-gray-500/5 border-border shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm">
               <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <User className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      <User className="h-5 w-5 text-primary flex-shrink-0" />
+                      <h3 className="font-semibold text-foreground break-words">
                         {plan.profiles?.full_name || 'Unknown Client'}
                       </h3>
-                      <Badge className={`${colorClass}`}>
+                      <Badge className={`${colorClass} flex-shrink-0`}>
                         <IconComponent className="h-3 w-3 mr-1" />
                         {plan.plan_type.charAt(0).toUpperCase() + plan.plan_type.slice(1)} Plan
                       </Badge>
                     </div>
                     
                     <div className="space-y-3">
-                      <h4 className="font-medium text-foreground text-lg">{plan.title}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <h4 className="font-medium text-foreground text-lg break-words">{plan.title}</h4>
+                      <p className="text-sm text-muted-foreground break-words">
                         Service: {plan.services?.title || 'Unknown Service'}
                       </p>
                       {plan.description && (
-                        <p className="text-muted-foreground bg-card/30 p-3 rounded-md border border-border/50 backdrop-blur-sm">{plan.description}</p>
+                        <p className="text-muted-foreground bg-card/30 p-3 rounded-md border border-border/50 backdrop-blur-sm break-words">{plan.description}</p>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm">
-                        <span className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          {plan.file_name}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground bg-card/30 p-2 rounded-md border border-border/50 backdrop-blur-sm">
+                        <span className="flex items-center gap-1 break-all">
+                          <FileText className="h-4 w-4 flex-shrink-0" />
+                          <span className="break-all">{plan.file_name}</span>
                         </span>
-                        <span>Size: {formatFileSize(plan.file_size)}</span>
-                        <span>Uploaded: {new Date(plan.created_at || '').toLocaleDateString()}</span>
+                        <span className="flex-shrink-0">Size: {formatFileSize(plan.file_size)}</span>
+                        <span className="flex-shrink-0">Uploaded: {new Date(plan.created_at || '').toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => window.open(plan.file_url, '_blank')}
-                      className="border-primary/30 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary"
+                      className="border-primary/30 text-primary hover:bg-primary/20 hover:text-primary hover:border-primary flex-1 sm:flex-initial"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -521,7 +521,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
                         link.download = plan.file_name;
                         link.click();
                       }}
-                      className="border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 hover:border-blue-400"
+                      className="border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 hover:border-blue-400 flex-1 sm:flex-initial"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -529,7 +529,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
                       size="sm"
                       variant="outline"
                       onClick={() => deleteServicePlan(plan.id, plan.file_url)}
-                      className="border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-400 flex-1 sm:flex-initial"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
