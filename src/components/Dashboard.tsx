@@ -15,6 +15,7 @@ import AdminDashboard from "./AdminDashboard";
 import logo from "@/assets/ssf-logo.jpg";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationCenter from "./NotificationCenter";
+import { PushNotificationSettings } from "./PushNotificationSettings";
 
 interface DashboardProps {
   user: any;
@@ -1232,6 +1233,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onSignOut }) => {
                 </div>
               </CardContent>
             </Card>
+
+            <PushNotificationSettings userId={user.id} />
           </TabsContent>
         </Tabs>
       </main>

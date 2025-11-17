@@ -47,6 +47,7 @@ import ResourcesManager from "./ResourcesManager";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationCenter from "./NotificationCenter";
 import PlansManagement from "./PlansManagement";
+import { PushNotificationSettings } from "./PushNotificationSettings";
 
 interface AdminDashboardProps {
   user: any;
@@ -1779,6 +1780,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                 </CardContent>
               </Card>
             </div>
+
+            <PushNotificationSettings userId={user.id} />
           </TabsContent>
 
           <TabsContent value="contacts" className="space-y-6 w-full overflow-x-hidden">
