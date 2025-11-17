@@ -98,7 +98,8 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
 
       // Notify user and admins that a purchase was created and is pending payment
       try {
-        await supabase.functions.invoke('send-notification', {
+        console.log('Attempting to send notification to user:', user?.id);
+        const userNotifResponse = await supabase.functions.invoke('send-notification', {
           body: {
             user_id: user?.id,
             title: 'Purchase Created',
@@ -106,24 +107,19 @@ const ServicePurchase = ({ service, user }: ServicePurchaseProps) => {
             type: 'info'
           }
         });
+        console.log('User notification response:', userNotifResponse);
 
-        const { data: adminProfiles } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('is_admin', true);
-
-        if (adminProfiles) {
-          await Promise.all(adminProfiles.map(admin =>
-            supabase.functions.invoke('send-notification', {
-              body: {
-                user_id: admin.user_id,
-                title: 'New Pending Purchase',
-                message: `${user?.email} created a pending purchase for ${service.title} (amount: ${service.price}). Payment method: ${paymentMethod}.`,
-                type: 'info'
-              }
-            })
-          ));
-        }
+        // Notify admins using dedicated Edge Function (bypasses RLS issues)
+        console.log('Notifying admins about purchase...');
+        const adminNotifResponse = await supabase.functions.invoke('notify-admins-purchase', {
+          body: {
+            user_email: user?.email,
+            service_title: service.title,
+            amount: service.price,
+            payment_method: paymentMethod === 'momo' ? 'Mobile Money' : 'Bank Transfer'
+          }
+        });
+        console.log('Admin notification response:', adminNotifResponse);
       } catch (notifError) {
         console.error('Error sending notifications:', notifError);
       }
