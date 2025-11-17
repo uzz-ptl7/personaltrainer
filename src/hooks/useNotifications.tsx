@@ -40,10 +40,10 @@ export const useNotifications = (userId: string | null) => {
         (payload) => {
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev]);
-          
+
           // Show browser notification
           showBrowserNotification(newNotification);
-          
+
           // Show toast
           toast({
             title: newNotification.title,
@@ -115,11 +115,25 @@ export const useNotifications = (userId: string | null) => {
     }
   };
 
+  const clearAll = async () => {
+    if (!userId) return;
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+
+    if (!error) {
+      setNotifications([]);
+    }
+  };
+
   return {
     notifications,
     unreadCount: notifications.filter((n) => !n.is_read).length,
     markAsRead,
     markAllAsRead,
+    clearAll,
     reload: loadNotifications,
   };
 };
