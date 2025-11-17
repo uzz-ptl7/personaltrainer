@@ -116,18 +116,18 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
         {/* Training Programs */}
         {activeCategory === "programs" && (
           <div>
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.program.length > 0 ? (
                 servicesByType.program.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="py-8 text-center">
-                      <p className="text-muted-foreground">No training programs available at the moment.</p>
-                    </CardContent>
-                  </Card>
-                )}
+              ) : (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">No training programs available at the moment.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -135,18 +135,18 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
         {/* Consultations */}
         {activeCategory === "consultations" && (
           <div>
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.consultation.length > 0 ? (
                 servicesByType.consultation.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="py-8 text-center">
-                      <p className="text-muted-foreground">No consultation services available at the moment.</p>
-                    </CardContent>
-                  </Card>
-                )}
+              ) : (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">No consultation services available at the moment.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -154,18 +154,18 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
         {/* Personal Sessions */}
         {activeCategory === "sessions" && (
           <div>
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.session.length > 0 ? (
                 servicesByType.session.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-                ) : (
-                  <Card className="col-span-full">
-                    <CardContent className="py-8 text-center">
-                      <p className="text-muted-foreground">No personal training sessions available at the moment.</p>
-                    </CardContent>
-                  </Card>
-                )}
+              ) : (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground">No personal training sessions available at the moment.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -174,23 +174,23 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
         {activeCategory === "plans" && (
           <div>
             <div className="text-center mb-6 px-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 break-words">Customized & Pre-Made Plans</h3>
-                  <p className="text-sm sm:text-base text-muted-foreground break-words">Choose from recurring programs, one-time customized plans, or downloadable resources</p>
-                </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 break-words">Customized & Pre-Made Plans</h3>
+              <p className="text-sm sm:text-base text-muted-foreground break-words">Choose from recurring programs, one-time customized plans, or downloadable resources</p>
+            </div>
 
-                {servicesByType.plans.length === 0 ? (
-                  <Card className="bg-gradient-card border-border">
-                    <CardContent className="flex items-center justify-center py-12">
-                      <p className="text-muted-foreground">No plans available at the moment.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
-                    {servicesByType.plans.map((service) => (
-                      <ServicePurchase key={service.id} service={service} user={user} />
-                    ))}
-                  </div>
-                )}
+            {servicesByType.plans.length === 0 ? (
+              <Card className="bg-gradient-card border-border">
+                <CardContent className="flex items-center justify-center py-12">
+                  <p className="text-muted-foreground">No plans available at the moment.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
+                {servicesByType.plans.map((service) => (
+                  <ServicePurchase key={service.id} service={service} user={user} />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -203,7 +203,7 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
+              <Button
                 onClick={() => window.location.href = '#contact'}
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
