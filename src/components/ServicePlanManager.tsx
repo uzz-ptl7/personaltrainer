@@ -160,7 +160,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
 
       // Filter purchases that already have service plans
       const existingPurchaseIds = new Set((servicePlansData || []).map(plan => plan.purchase_id));
-      const availablePurchases = enrichedPurchases.filter(purchase => 
+      const availablePurchases = enrichedPurchases.filter(purchase =>
         !existingPurchaseIds.has(purchase.id)
       );
 
@@ -180,7 +180,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
 
   const uploadServicePlan = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedPurchaseId || !title || !selectedFile || !planType) {
       toast({
         title: "Validation Error",
@@ -244,7 +244,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
       setDescription('');
       setPlanType('custom');
       setSelectedFile(null);
-      
+
       // Reload data
       loadData();
     } catch (error) {
@@ -326,7 +326,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
           <h2 className="text-2xl font-bold text-foreground break-words">Service Plan Management</h2>
           <p className="text-muted-foreground text-sm break-words">Upload personalized plans for clients based on consultation outcomes</p>
         </div>
-        
+
         <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary w-full sm:w-auto flex-shrink-0" size="sm" disabled={completedPurchases.length === 0}>
@@ -467,7 +467,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
         {servicePlans.map((plan) => {
           const IconComponent = getPlanTypeIcon(plan.plan_type);
           const colorClass = getPlanTypeColor(plan.plan_type);
-          
+
           return (
             <Card key={plan.id} className="bg-gradient-to-r from-slate-500/5 to-gray-500/5 border-border shadow-md hover:shadow-lg transition-shadow backdrop-blur-sm">
               <CardContent className="p-6">
@@ -483,7 +483,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
                         {plan.plan_type.charAt(0).toUpperCase() + plan.plan_type.slice(1)} Plan
                       </Badge>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <h4 className="font-medium text-foreground text-lg break-words">{plan.title}</h4>
                       <p className="text-sm text-muted-foreground break-words">
@@ -502,7 +502,7 @@ const ServicePlanManager: React.FC<ServicePlanManagerProps> = ({ currentUserId }
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                     <Button
                       size="sm"

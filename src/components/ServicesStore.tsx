@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ServicePurchase from "./ServicePurchase";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import logo from "@/assets/ssf-logo.jpg";
 
 interface Service {
   id: string;
@@ -28,6 +29,7 @@ interface ServicesStoreProps {
 const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>("programs");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,104 +82,123 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gradient-primary">SSF Services</h1>
-              <p className="text-muted-foreground">Choose your fitness transformation program</p>
+          <div className="flex items-center gap-3 mb-4">
+            <img src={logo} alt="SSF Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gradient-primary break-words">SSF Services</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground break-words">Choose your fitness transformation program</p>
             </div>
           </div>
+          <Button variant="ghost" size="sm" onClick={onBack} className="w-full sm:w-fit">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="programs" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="programs">Training Programs</TabsTrigger>
-            <TabsTrigger value="consultations">Consultations</TabsTrigger>
-            <TabsTrigger value="sessions">Personal Sessions</TabsTrigger>
-            <TabsTrigger value="plans">Plans</TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        {/* Category Filter */}
+        <div className="mb-6">
+          <label className="text-sm font-medium text-muted-foreground mb-2 block">Filter by Category</label>
+          <Select value={activeCategory} onValueChange={setActiveCategory}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="programs">Training Programs</SelectItem>
+              <SelectItem value="consultations">Consultations</SelectItem>
+              <SelectItem value="sessions">Personal Sessions</SelectItem>
+              <SelectItem value="plans">Plans</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-          <TabsContent value="programs" className="mt-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Training Programs */}
+        {activeCategory === "programs" && (
+          <div>
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.program.length > 0 ? (
                 servicesByType.program.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-              ) : (
-                <Card className="col-span-full">
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No training programs available at the moment.</p>
-                  </CardContent>
-                </Card>
-              )}
+                ) : (
+                  <Card className="col-span-full">
+                    <CardContent className="py-8 text-center">
+                      <p className="text-muted-foreground">No training programs available at the moment.</p>
+                    </CardContent>
+                  </Card>
+                )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="consultations" className="mt-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Consultations */}
+        {activeCategory === "consultations" && (
+          <div>
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.consultation.length > 0 ? (
                 servicesByType.consultation.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-              ) : (
-                <Card className="col-span-full">
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No consultation services available at the moment.</p>
-                  </CardContent>
-                </Card>
-              )}
+                ) : (
+                  <Card className="col-span-full">
+                    <CardContent className="py-8 text-center">
+                      <p className="text-muted-foreground">No consultation services available at the moment.</p>
+                    </CardContent>
+                  </Card>
+                )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="sessions" className="mt-8">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Personal Sessions */}
+        {activeCategory === "sessions" && (
+          <div>
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {servicesByType.session.length > 0 ? (
                 servicesByType.session.map((service) => (
                   <ServicePurchase key={service.id} service={service} user={user} />
                 ))
-              ) : (
-                <Card className="col-span-full">
-                  <CardContent className="py-8 text-center">
-                    <p className="text-muted-foreground">No personal training sessions available at the moment.</p>
-                  </CardContent>
-                </Card>
-              )}
+                ) : (
+                  <Card className="col-span-full">
+                    <CardContent className="py-8 text-center">
+                      <p className="text-muted-foreground">No personal training sessions available at the moment.</p>
+                    </CardContent>
+                  </Card>
+                )}
             </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Plans Tab */}
-        <div className="mt-12">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-foreground mb-2">Customized & Pre-Made Plans</h3>
-            <p className="text-muted-foreground">Choose from recurring programs, one-time customized plans, or downloadable resources</p>
           </div>
+        )}
 
-          {servicesByType.plans.length === 0 ? (
-            <Card className="bg-gradient-card border-border">
-              <CardContent className="flex items-center justify-center py-12">
-                <p className="text-muted-foreground">No plans available at the moment.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2">
-              {servicesByType.plans.map((service) => (
-                <ServicePurchase key={service.id} service={service} user={user} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Plans */}
+        {activeCategory === "plans" && (
+          <div>
+            <div className="text-center mb-6 px-2">
+                  <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 break-words">Customized & Pre-Made Plans</h3>
+                  <p className="text-sm sm:text-base text-muted-foreground break-words">Choose from recurring programs, one-time customized plans, or downloadable resources</p>
+                </div>
 
-        <div className="mt-12 text-center">
+                {servicesByType.plans.length === 0 ? (
+                  <Card className="bg-gradient-card border-border">
+                    <CardContent className="flex items-center justify-center py-12">
+                      <p className="text-muted-foreground">No plans available at the moment.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 sm:gap-6 grid-cols-1 xl:grid-cols-2">
+                    {servicesByType.plans.map((service) => (
+                      <ServicePurchase key={service.id} service={service} user={user} />
+                    ))}
+                  </div>
+                )}
+          </div>
+        )}
+
+        <div className="mt-8 text-center px-2">
           <Card className="bg-gradient-card border-border max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-gradient-primary">Need Help Choosing?</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl text-gradient-primary break-words">Need Help Choosing?</CardTitle>
+              <CardDescription className="text-sm sm:text-base break-words">
                 Not sure which program is right for you? Book a free consultation to get personalized recommendations.
               </CardDescription>
             </CardHeader>
@@ -185,7 +206,7 @@ const ServicesStore = ({ user, onBack }: ServicesStoreProps) => {
               <Button 
                 onClick={() => window.location.href = '#contact'}
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground w-full sm:w-auto"
               >
                 Contact Salim
               </Button>

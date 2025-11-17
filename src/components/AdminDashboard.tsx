@@ -1996,6 +1996,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, onSignOut }) => {
                             <p className="text-sm text-muted-foreground truncate">
                               {purchase.profiles?.email || 'No email'} • {formatCurrency(purchase.amount)}
                             </p>
+                            {purchase.payment_method && (
+                              <p className="text-sm text-muted-foreground truncate">
+                                Payment: {purchase.payment_method === 'momo' ? 'Mobile Money' : purchase.payment_method === 'bank' ? 'Bank Transfer' : purchase.payment_method}
+                              </p>
+                            )}
                             <p className="text-xs text-muted-foreground">
                               Purchased: {formatDate(purchase.purchased_at)} • ID: {purchase.id.slice(0, 8)}...
                             </p>
